@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0F172A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ZPO Promo">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<title>ZPO Promotion Evaluation Tool</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #F1F5F9; }
+
+  /* Install banner */
+  #install-banner {
+    display: none;
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 9999;
+    background: #0F172A; color: white;
+    padding: 12px 16px; padding-bottom: calc(12px + env(safe-area-inset-bottom));
+    flex-direction: row; align-items: center; gap: 12px;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.3);
+  }
+  #install-banner.show { display: flex; }
+  #install-banner .ib-icon { font-size: 28px; flex-shrink: 0; }
+  #install-banner .ib-text { flex: 1; min-width: 0; }
+  #install-banner .ib-title { font-size: 13px; font-weight: 700; }
+  #install-banner .ib-sub { font-size: 11px; color: #94A3B8; margin-top: 2px; }
+  #install-banner .ib-btn {
+    padding: 8px 14px; border-radius: 8px; font-size: 12px; font-weight: 700;
+    cursor: pointer; white-space: nowrap; border: none;
+    background: #3B82F6; color: white;
+  }
+  #install-banner .ib-dismiss {
+    background: none; border: none; color: #64748B; font-size: 18px; cursor: pointer; padding: 4px; flex-shrink: 0;
+  }
+
+  /* iOS install tip */
+  #ios-tip {
+    display: none;
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 9999;
+    background: #1E293B; color: white; border-radius: 16px 16px 0 0;
+    padding: 20px 20px; padding-bottom: calc(20px + env(safe-area-inset-bottom));
+    box-shadow: 0 -4px 30px rgba(0,0,0,0.4);
+  }
+  #ios-tip.show { display: block; }
+  #ios-tip h3 { font-size: 15px; font-weight: 800; margin-bottom: 10px; }
+  #ios-tip ol { font-size: 13px; color: #CBD5E1; line-height: 1.9; margin-left: 18px; }
+  #ios-tip .ios-close {
+    position: absolute; top: 16px; right: 16px;
+    background: #334155; border: none; color: white; border-radius: 50%;
+    width: 28px; height: 28px; font-size: 14px; cursor: pointer; font-weight: 700;
+  }
+  #ios-tip .share-icon { display:inline-block; background:#3B82F6; border-radius:6px; padding:1px 6px; font-size:11px; }
+
+  /* Offline badge */
+  #offline-badge {
+    display: none; position: fixed; top: 8px; right: 8px; z-index: 8888;
+    background: #DC2626; color: white; font-size: 10px; font-weight: 700;
+    padding: 3px 8px; border-radius: 20px;
+  }
+  #offline-badge.show { display: block; }
+
+  /* Safe area padding for app content */
+  #root { padding-bottom: env(safe-area-inset-bottom); }
+</style>
+</head>
+<body>
+
+<!-- Offline badge -->
+<div id="offline-badge">⚡ Offline</div>
+
+<!-- Android/Desktop install banner -->
+<div id="install-banner">
+  <div class="ib-icon">📋</div>
+  <div class="ib-text">
+    <div class="ib-title">Install ZPO Promo</div>
+    <div class="ib-sub">Add to home screen — works offline</div>
+  </div>
+  <button class="ib-btn" id="install-btn">Install</button>
+  <button class="ib-dismiss" id="dismiss-btn">✕</button>
+</div>
+
+<!-- iOS install tip -->
+<div id="ios-tip">
+  <button class="ios-close" onclick="document.getElementById('ios-tip').classList.remove('show')">✕</button>
+  <h3>📲 Install on iPhone / iPad</h3>
+  <ol>
+    <li>Tap the <span class="share-icon">⬆ Share</span> button in Safari</li>
+    <li>Scroll down and tap <strong>"Add to Home Screen"</strong></li>
+    <li>Tap <strong>"Add"</strong> — done!</li>
+  </ol>
+  <p style="font-size:11px;color:#64748B;margin-top:12px">Works offline. Data saved on your device.</p>
+</div>
+
+<div id="root"></div>
+
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+
+<script>
+// ── Service Worker registration ──────────────────────────────────────────────
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").then(reg => {
+      console.log("SW registered:", reg.scope);
+    }).catch(err => console.log("SW failed:", err));
+  });
+}
+
+// ── Offline badge ────────────────────────────────────────────────────────────
+function updateOnline() {
+  document.getElementById("offline-badge").classList.toggle("show", !navigator.onLine);
+}
+window.addEventListener("online", updateOnline);
+window.addEventListener("offline", updateOnline);
+updateOnline();
+
+// ── Android/Desktop install prompt ──────────────────────────────────────────
+let deferredPrompt = null;
+window.addEventListener("beforeinstallprompt", e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  // Only show if not already installed
+  if (!window.matchMedia("(display-mode: standalone)").matches) {
+    document.getElementById("install-banner").classList.add("show");
+  }
+});
+
+document.getElementById("install-btn").addEventListener("click", async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  document.getElementById("install-banner").classList.remove("show");
+});
+
+document.getElementById("dismiss-btn").addEventListener("click", () => {
+  document.getElementById("install-banner").classList.remove("show");
+  localStorage.setItem("pwa-dismissed", "1");
+});
+
+// ── iOS install tip ──────────────────────────────────────────────────────────
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+const isInStandalone = window.navigator.standalone === true;
+const wasDismissed = localStorage.getItem("ios-tip-dismissed");
+if (isIOS && !isInStandalone && !wasDismissed) {
+  setTimeout(() => {
+    document.getElementById("ios-tip").classList.add("show");
+  }, 2000);
+}
+document.querySelector(".ios-close")?.addEventListener("click", () => {
+  localStorage.setItem("ios-tip-dismissed", "1");
+});
+</script>
+
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+
+
+// ─── STATIC DATA ──────────────────────────────────────────────────────────────
+const LEVELS = {
+  // IC Track
+  "1.2":    { title: "Associate Product Owner / Trainee", track:"IC", eyeLevel: "Consistently deliver small feature requests with guidance from manager / supervisor" },
+  "1.3":    { title: "Product Owner",                     track:"IC", eyeLevel: "Consistently deliver feature / single domain requests independently" },
+  "2.1":    { title: "Senior Product Owner I",            track:"IC", eyeLevel: "Own large features within a product; or individual product line independently" },
+  "2.2":    { title: "Senior Product Owner II",           track:"IC", eyeLevel: "Own a significant product scope end to end from strategy to results" },
+  "2.2pm":  { title: "Vertical Product Lead",             track:"PM", eyeLevel: "Manager of a product area with multiple product lines — 1–2 PO reports" },
+  "2.3":    { title: "Staff Product Owner",               track:"IC", eyeLevel: "Master of a major product scope; driving both product & growth / scaling strategy; focus on OKRs achievement" },
+  "2.3pm":  { title: "Associate Product Manager",         track:"PM", eyeLevel: "Lead multiple product areas, each with its own PO, driving product strategy & business OKRs achievement" },
+  "3.1":    { title: "Product Expert",                    track:"IC", eyeLevel: "A recognized product expert in their product area: driving innovative & differentiating product strategy that yields results" },
+  "3.1pm":  { title: "Product Manager",                   track:"PM", eyeLevel: "Lead a major product group within ZaloPay, track record of growing people" },
+  "3.2":    { title: "Principal Product Expert",          track:"IC", eyeLevel: "Top product person in regional scale — recognized for achievement in Active Users, Usability or Revenue" },
+  "3.2pm":  { title: "Senior Product Manager",            track:"PM", eyeLevel: "A visible leader, influencing business and company's direction, authoring new product direction" },
+  "3.3":    { title: "Group Product Manager",             track:"PM", eyeLevel: "Influential product & company leader; shaping company's strategy; consistently making major product bets that yield positive results" },
+};
+const LEVEL_OPTIONS = ["1.2","1.3","2.1","2.2","2.2pm","2.3","2.3pm","3.1","3.1pm","3.2","3.2pm","3.3"];
+const NEXT_LEVEL = {
+  "1.2":"1.3","1.3":"2.1","2.1":"2.2",
+  "2.2":"2.3","2.2pm":"2.3pm",
+  "2.3":"3.1","2.3pm":"3.1pm",
+  "3.1":"3.2","3.1pm":"3.2pm",
+  "3.2":"3.3","3.2pm":"3.3",
+};
+
+const PROMOTION_CONDITIONS = [
+  { id:"scope", label:"Scope of Work", desc:"Current work scope must already be operating at the next level, as outlined in the PM Track." },
+  { id:"competency", label:"Competency (Primary)", desc:"Must demonstrate next-level competencies OR show clear promise to achieve them quickly. Quality Assurance & Stakeholder Management are mandatory gates.", isCompetency:true },
+  { id:"track", label:"Track Record", desc:"Recent performance history taken into account as a supporting factor." },
+];
+
+const COMPETENCY_GROUPS = [
+  { group:"Product Execution", skills:["Feature Specification","Delivery & Collaboration","Quality Assurance"] },
+  { group:"Customer Insights", skills:["Fluency with Data","Analytical Mindset","User Empathy","User Experience Design"] },
+  { group:"Product Strategy", skills:["Ownership Mindset","Vision & Roadmapping","Product Innovation"] },
+  { group:"Influencing People", skills:["Stakeholder Management","Team Building","Leadership Presence"] },
+];
+const MANDATORY_SKILLS = ["Quality Assurance","Stakeholder Management"];
+
+// ─── EYE-LEVEL SUMMARY (per level, editable context) ─────────────────────────
+const EYE_LEVEL_SUMMARY = {
+  "2.2": {
+    headline: "Own a significant product scope end to end — from strategy to results",
+    analogy: {
+      before: "Trước (2.1): Bạn là nhân viên quản lý một chi nhánh nhỏ — lo vận hành hàng ngày, báo cáo lên cấp trên, xử lý vấn đề khi được giao. Mọi quyết định lớn đều cần LM duyệt, chiến lược do LM define.",
+      after:  "Sau (2.2): Bạn là Giám đốc Chi nhánh — bạn chịu trách nhiệm toàn bộ P&L của chi nhánh, tự define chiến lược, phân bổ nhân sự vào từng mảng, và biết rõ từng bộ phận đang làm gì, stuck ở đâu. Cấp trên chỉ cần hỏi là bạn có ngay câu trả lời — không cần đợi tổng hợp.",
+      mapping: "Chi nhánh = BNPL platform. Bạn = Branch Director. Hào và dedicated resources = trưởng các phòng ban (Onboarding Dept, Payment Dept…). Mỗi partner/flow (CIMB, VP, Mini…) = một product line riêng trong chi nhánh. LM = HQ — vẫn set direction chung, nhưng không cần lo vận hành hàng ngày nữa.",
+    },
+    outputs: [
+      {
+        icon: "🗺️",
+        title: "BNPL Product Architecture Overview",
+        desc: "Nắm và maintain được toàn bộ product architecture của BNPL: Partner layer (Mini, CIMB, LFVN, VP, VC), Flow layer (Onboarding → Payment → Refund → Repayment → Account Mgmt → Renewal), Functional layer (Project Mgmt, Operation, Reconciliation). Không cần LM explain — bạn là người giải thích cho người khác.",
+      },
+      {
+        icon: "👥",
+        title: "Dedicated Resource Allocation",
+        desc: "Xác định rõ Hào và các resource khác sẽ take in charge scope nào trong BNPL. Bạn không cần làm tất cả — nhưng bạn phải biết ai đang làm gì, và khi nào cần escalate / re-allocate.",
+      },
+      {
+        icon: "📊",
+        title: "Workstream Progress Visibility",
+        desc: "Nắm được execution detail của tất cả workstream BNPL: problem đang gặp là gì, solution đã define chưa, blocker ở đâu, ETA có realistic không. Không đợi sếp hỏi — bạn chủ động có cái nhìn này mọi lúc.",
+      },
+    ],
+  },
+};
+
+const SKILL_MATURITY = {
+  "Feature Specification":    {"1.2":"Beginner","1.3":"Intermediate","2.1":"Proficient","2.2":"Expert","2.2pm":"Proficient","2.3":"Expert","2.3pm":"-","3.1":"Expert","3.1pm":"-","3.2":"Master","3.2pm":"-","3.3":"-"},
+  "Delivery & Collaboration": {"1.2":"Beginner","1.3":"Intermediate","2.1":"Proficient","2.2":"Proficient","2.2pm":"Proficient","2.3":"Expert","2.3pm":"Expert","3.1":"Expert","3.1pm":"Expert","3.2":"Expert","3.2pm":"Expert","3.3":"-"},
+  "Quality Assurance":        {"1.2":"Beginner","1.3":"Intermediate","2.1":"Intermediate","2.2":"Proficient","2.2pm":"-","2.3":"Proficient","2.3pm":"-","3.1":"Expert","3.1pm":"-","3.2":"Expert","3.2pm":"-","3.3":"-"},
+  "Fluency with Data":        {"1.2":"Beginner","1.3":"Beginner","2.1":"Intermediate","2.2":"Intermediate","2.2pm":"-","2.3":"Proficient","2.3pm":"-","3.1":"Expert","3.1pm":"-","3.2":"Expert","3.2pm":"-","3.3":"-"},
+  "Analytical Mindset":       {"1.2":"Beginner","1.3":"Intermediate","2.1":"Intermediate","2.2":"Proficient","2.2pm":"Proficient","2.3":"Expert","2.3pm":"Proficient","3.1":"Expert","3.1pm":"Expert","3.2":"Master","3.2pm":"Expert","3.3":"-"},
+  "User Empathy":             {"1.2":"Beginner","1.3":"Intermediate","2.1":"Intermediate","2.2":"Proficient","2.2pm":"Proficient","2.3":"Expert","2.3pm":"Proficient","3.1":"Expert","3.1pm":"Proficient","3.2":"Master","3.2pm":"Expert","3.3":"-"},
+  "User Experience Design":   {"1.2":"Beginner","1.3":"Beginner","2.1":"Intermediate","2.2":"Intermediate","2.2pm":"-","2.3":"Proficient","2.3pm":"-","3.1":"Expert","3.1pm":"-","3.2":"-","3.2pm":"-","3.3":"-"},
+  "Ownership Mindset":        {"1.2":"Beginner","1.3":"Intermediate","2.1":"Intermediate","2.2":"Proficient","2.2pm":"Proficient","2.3":"Proficient","2.3pm":"Expert","3.1":"Expert","3.1pm":"Expert","3.2":"Expert","3.2pm":"Master","3.3":"Master"},
+  "Vision & Roadmapping":     {"1.2":"-","1.3":"Beginner","2.1":"Intermediate","2.2":"Intermediate","2.2pm":"Proficient","2.3":"Proficient","2.3pm":"Proficient","3.1":"Expert","3.1pm":"Expert","3.2":"Expert","3.2pm":"Expert","3.3":"Expert"},
+  "Product Innovation":       {"1.2":"-","1.3":"Beginner","2.1":"Intermediate","2.2":"Intermediate","2.2pm":"Intermediate","2.3":"Proficient","2.3pm":"Intermediate","3.1":"Expert","3.1pm":"Proficient","3.2":"Master","3.2pm":"Expert","3.3":"Master"},
+  "Stakeholder Management":   {"1.2":"-","1.3":"Beginner","2.1":"Intermediate","2.2":"Proficient","2.2pm":"Proficient","2.3":"Expert","2.3pm":"Expert","3.1":"Expert","3.1pm":"Expert","3.2":"Expert","3.2pm":"Expert","3.3":"Master"},
+  "Team Building":            {"1.2":"-","1.3":"-","2.1":"Beginner","2.2":"-","2.2pm":"Intermediate","2.3":"-","2.3pm":"Proficient","3.1":"-","3.1pm":"Expert","3.2":"-","3.2pm":"Expert","3.3":"Master"},
+  "Leadership Presence":      {"1.2":"-","1.3":"-","2.1":"Beginner","2.2":"-","2.2pm":"Intermediate","2.3":"-","2.3pm":"Proficient","3.1":"-","3.1pm":"Expert","3.2":"Expert","3.2pm":"Expert","3.3":"Master"},
+};
+
+const MATURITY_DESC = {
+  "Feature Specification":{
+    Beginner:"Able to write a clear specification for a small feature and contribute meaningfully to specifications for major features.\n\nWork effectively with biz, tech & other stakeholders to gather all information needed.\n\nSpecs describe functionality in sufficient detail for stakeholders to understand and for engineers to build.",
+    Intermediate:"Able to write a clear specification for major features.\n\nAble to effectively think through and specify complex functionality within a product.\n\nHave a strong understanding of the logic/technical flow of your product line.\n\nAble to discuss and defend ideas when talking with tech team members.",
+    Proficient:"Able to write clear specification for a complete product.\n\nOn cross-functional projects, able to work closely with other POs and SA to form a view on product architecture.\n\nEffectively sequencing product inits and prioritizing most valuable features to test riskiest assumptions.\n\nCan estimate level of effort required for a feature and take that into account when drafting requirements.",
+    Expert:"Able to write specification for a major product/platform.\n\nCan review specs created by your team/other teams and give effective feedback at the appropriate level of detail.\n\nAble to navigate the complexity of ZaloPay legacy tech system and make appropriate trade offs given business requirements.",
+    Master:"Author an architecture transformation for ZaloPay.\n\nDeep understanding of major ZaloPay systems and how they are connected to make effective, risk-free adjustments when required.\n\nAble to think 3-step ahead and point out exactly the risks / guide Tech members to explore the risks in all ZaloPay systems when making changes.",
+  },
+  "Delivery & Collaboration":{
+    Beginner:"Able to develop effective working relationships with your immediate team at squad members level.\n\nCan effectively articulate the goals and business justification for your current project.\n\nWork with your manager to make the right implementation trade-off decisions in getting your project built and launched on schedule.",
+    Intermediate:"Able to develop effective working relationships with your squad lead, make him/her an ally.\n\nEffective at negotiating the implementation of your project, and making the right trade-off decisions in order to launch in a high-quality manner.\n\nKnow when to escalate to your manager if project falls behind deadline.\n\nAble to quickly solve small implementation roadblocks independently.\n\nAble to lead effective scrum team meetings.",
+    Proficient:"Able to command respect from squad leadership, build a trusted working relationship with squad.\n\nAble to challenge and push the Tech team members to focus on delivering key business goals.\n\nFind right creative solutions that strike the right balance between speed and quality.\n\nAnticipate and resolve implementation risks effectively & independently.\n\nAble to give feedback and drive necessary behavioral changes in squad members (if necessary).",
+    Expert:"Able to form relationship and command respect from tech leaders; able to influence tech leaders.\n\nAble to match resources available and planned roadmap to effectively request for help to deliver against aggressive timelines.\n\nKnow how to motivate & inspire your team to push through challenges.\n\nCan make tough trade-off decisions that result in both a successful initial launch and quick, data-driven iteration.",
+    Master:"You are known in ZaloPay to make the 'impossible' possible in terms of launching new products to market.\n\nYou can constantly drive project against very aggressive timeline, without burning the team out.\n\nYour squad trusts you to make tough trade-off decisions when complication arises and priority changes.",
+  },
+  "Quality Assurance":{
+    Beginner:"Able to work with QC to ensure a high-quality launch.\n\nCan prioritize the severity of bugs and make recommendations whether to launch that feature.",
+    Intermediate:"Able to step in to cover QC role effectively to resolve bottleneck for launch.\n\nCan anticipate and resolve issues before production stage.\n\nMonitor and make decision to roll back when the release has issues.\n\nEffectively work with Tech team to identify root causes of the bugs.",
+    Proficient:"Able to effectively guide and help QC strategize in testing phase.\n\nUnderstand how multiple features are interrelated and catch more complex problems.\n\nAble to spot trends and blips in performance dashboard/charts to identify issues before Tech members.\n\nInfluence and enhance processes to reduce number of errors over time.",
+    Expert:"Can effectively rally additional support for your team when a feature or release is especially complex or risky.\n\nProactively driving and influencing tech team members to take Quality issue seriously.\n\nDevelop or author changes to processes cross-functional (not just Tech, but also Operational teams) to ensure highest quality release.",
+    Master:"You create a quality-first culture to ensure that your team consistently delivers high quality products.",
+  },
+  "Fluency with Data":{
+    Beginner:"Able to read and understand insights from pre-built dashboard metrics.\n\nBasic understanding of analytics best practices, know how to write SQL and use basic data tools (Superset)/ZDS built tools.\n\nCan write effective requests to ZDS to gather insights and build new dashboards.",
+    Intermediate:"Able to effectively define proper event tracking for a project with support from ZDS.\n\nUses dashboards effectively to track progress of team objectives/goals.\n\nHave a strong grasp of Superset and can self-serve some of the adhoc queries.",
+    Proficient:"Able to independently define event tracking and support ZDS navigating data schema to build new charts/dashboards.\n\nEffectively define tracking framework on both Front end (event tracking) and Back end (interaction tracking).\n\nWork efficiently with ZDS/BI team to perform analyses around key metrics.\n\nAble to use Jupyter/PySpark to perform more complex queries.",
+    Expert:"Can easily diagnose issues and opportunities with dashboards & track progress/objectives of product lines.\n\nLeverage data to inform your product roadmap and key product decisions in presentations to stakeholders.\n\nCan perform majority of product queries in Jupyter PySpark in absence of ZDS' support.\n\nMentor new team members in data query skills.",
+    Master:"Go-to expert when teams need to consult on metrics to track / data to consume of different product lines at ZaloPay.\n\nSkill-wise, you can effectively substitute part of ZDS/BI team.\n\nHelp your team to build up their data fluency, making them more effective decision makers and efficient communicators.",
+  },
+  "Analytical Mindset":{
+    Beginner:"Able to appropriately react when spotting changes from dashboard charts.\n\nNeed some assistance to perform experiments and deep dive analyses.",
+    Intermediate:"Understand different testing methods; apply AB tests in product development process.\n\nCan analyze the results post-launch/AB tests and work with your manager to make recommendations on the right next steps for the feature.\n\nUse insights from self-serve/ad-hoc queries to drive product recommendations and set realistic goals for upcoming projects.",
+    Proficient:"Argue with numbers: effectively use charts, lite excel models with clear assumptions.\n\nAble to come up with set of useful, relevant metrics for your product based on business questions, product type, user behavior.\n\nPartner with analysts on deep dive analyses as well as lead deep dive analyses on their own.\n\nConsistently make data-driven product improvements that yield proven business results.",
+    Expert:"Translate business/real life questions or hypotheses to smaller problems that data can answer.\n\nBe comfortable with data ambiguity and able to come up with critical insights from seemingly normal datasets.\n\nConsistently look to challenge self-assumptions with data.\n\nForm coherent stories of your product with key metrics/charts.",
+    Master:"Guide team to perform complex analyses & help them structure their presentation to uncover non-intuitive insights.\n\nEasily break down big product/business problems into smaller questions & use approximation to come up with answers at speed.\n\nSet example for data-driven culture at ZaloPay.",
+  },
+  "User Empathy":{
+    Beginner:"Understand who your users are (esp. important for non-end-user facing product lines e.g. merchants, internal tools).\n\nWork with manager to identify when to gather feedback from users.\n\nUnderstand the benefits and tradeoffs of using various user feedback channels.",
+    Intermediate:"Able to articulate user problems and prioritize product/features based on severity & urgency.\n\nIndependently assess when it is critical to gather user input to make decision.\n\nWork closely with UXR team to determine which method of user feedbacks is most effective for the task at hand.",
+    Proficient:"Able to segment target user groups (personas) and link that with product design decisions.\n\nEstablish constant channels of feedback (CS/Social media/app store review/occasional user check-ins) to gather user feedback.\n\nCan effectively balance feedback from users with the business needs of the company, and make the right trade-off decisions.",
+    Expert:"Command in-depth understanding of your user's mental models and small nuances among different personas.\n\nCan provide advice and guidance to UXR team on the appropriate research approach.\n\nCan lead user interviews/usability test/focus group discussions with right methodology.",
+    Master:"Uncover unmet needs & non-common-sense, non-intuitive insights in behaviors of different user segments, gained through hundreds of hours of speaking to customers, observations, and researches.\n\nSet example for customer obsession culture at ZaloPay.\n\nLeverage user research results to inform product strategy and discover new product opportunities.",
+  },
+  "User Experience Design":{
+    Beginner:"Need some form of assistance in working with Design team throughout the product development cycle.\n\nAble to assess the quality of an existing user experience and make concrete recommendations for how to improve.\n\nAble to quickly develop low-fi wireframe for your feature/product in Figma.",
+    Intermediate:"Properly brief the context and constraint of the product/project in collaboration with Design team and manage timeline effectively.\n\nWork with the design team to create a UI that is high-quality, meets the project's business requirements, and abides by the design system of ZaloPay.\n\nCan produce hi-fi wireframe in Figma with assistance from Design team.",
+    Proficient:"Engage Design team as true thought partners in solving user problems.\n\nProvide help/guidance to the design team in terms of product visual direction.\n\nCan critically assess the Design's work, and give clear and constructive feedback to help improve its usability & balance business needs.\n\nIndependently produce hi-fi wireframe in Figma leveraging Design systems.",
+    Expert:"Known for raising the standards when working with Design team.\n\nUnderstand the value of consistent design across the company, and are an advocate for effectively using Design systems.\n\nAble to produce production-grade UI with minimal supervision/adjustment from UED team.",
+    Master:"Respected by Design team for building aesthetic yet functional products.\n\nSource of knowledge on design and UX best practices and actively support other POs in improving their flows.\n\nAble to produce high-quality UI/prototype and can work independently as a product designer.",
+  },
+  "Ownership Mindset":{
+    Beginner:"Can articulate the goals of your current project/feature/product, follow through with analysis post-launch, and understand how those results tie to the goals of your team.\n\nUnderstand the overall direction of your product area and how the work you are doing connects to ZaloPay's overall strategy.",
+    Intermediate:"Work closely with business counterparts to sharpen the value of a BRD/request.\n\nAble to prioritize work plan based on size of business value & feasibility/efforts.\n\nConsistently drive to actionable next steps in analyses/communication.\n\nStrive to achieve 100% of your commitments and proactively communicate when commitments can't be achieved.\n\nDemonstrate how your product direction makes a meaningful contribution to your group/ZaloPay's strategy.",
+    Proficient:"Able to challenge and negotiate with business counterparts based on the value of BRD/requests; can give effective inputs to biz plan.\n\nCan effectively take into account team strategy when making roadmap decisions, and communicate those strategic ties to more junior team members.\n\nEmbrace the 'can-do' attitude in your day-to-day product work.\n\nAccountable for project success, measured by outcome, not output.",
+    Expert:"Actively define the product plan based on understanding of business situation, industry dynamics and ZaloPay needs.\n\nExpand your influence to product groups beyond your immediate scope of work; able to advise & give feedback for POs from other teams.\n\nMake difficult trade offs/sacrifices to your own plan/roadmap if it is for the common success of ZaloPay.",
+    Master:"Owner of a product group / company-wide product strategy and drive progress towards that strategy.\n\nFoster culture focusing on outcomes, not output in your team and set example for ZaloPay as a team that consistently hits/exceeds business objectives.\n\nCan influence changes at the company level to maximize outcomes.",
+  },
+  "Vision & Roadmapping":{
+    Beginner:"Roadmap is handed/supported by your direct manager.\n\nClearly understand and can articulate how your current roadmap ties to your team's goals and those of your product group.\n\nComfortable escalating to/working with your manager when that connection isn't clear.",
+    Intermediate:"Able to meaningfully contribute to product roadmap planning with quarterly (2-3 month) view.\n\nMake proactive recommendations on how to better achieve your team/ZaloPay's goals through your forward-looking roadmap.\n\nDetailed, high fidelity roadmap of 2 sprints in advance.\n\nEnsure the immediate delivery team (Tech/QC) is on the same page in terms of planning.",
+    Proficient:"Responsible for crafting a 3-month product roadmap independently, taking input from various relevant stakeholders.\n\nUnderstand how to make trade-off decisions that maximize value for your product area/ZaloPay.\n\nDefine a product strategy & vision document for your product area.\n\nWork closely with business counterparts & other squads to ensure all release dates are hit.",
+    Expert:"Able to form a detailed, high fidelity 3-month roadmap for your product vertical/area with high accuracy.\n\nCome up with educated 6-month+ view on the product direction.\n\nActively identify novel areas for investment that further this product vision.",
+    Master:"Enable your team to define impactful 3-month+ roadmaps for their product areas, and synthesize those roadmaps into an overarching vision for ZaloPay.\n\nResponsible for clearly defining what your team should be focused on, the narrative of why the product initiative is important, and setting clear expectations for what outcomes will be delivered for the company.",
+  },
+  "Product Innovation":{
+    Beginner:"Compare and contrast the current product with competitors on the market to come up with small product differentiation.\n\nAlways look for alternative solutions/different approaches to the business/user problems at hand.",
+    Intermediate:"Not only compare but also understand the rationale behind the competitors' product decisions to form an opinionated view on your product.\n\nMake decision to imitate or innovate based on nature of the product flow.\n\nBuild a knowledge base of best-in-class from regional/global companies.",
+    Proficient:"Understand deeply the industry dynamics at play and other alternatives to solve the user problems.\n\nCome up with product direction driven by specific user problem and take into account competitors' strategy & positioning.\n\nProactively come up with differentiation in product positioning that matters.",
+    Expert:"Considered as an expert for that product area, based on the number of innovative ideas.\n\nLeave a distinctive creative/innovative mark on the entire product of ZaloPay.\n\nEffectively make the case for investments in strategic initiatives that had not previously been on the roadmap.",
+    Master:"Consistently place strategic product bets that turn into successes.\n\nPersuade leadership team and rally company around new product directions.\n\nAuthor articles/blogs on topic of product development.",
+  },
+  "Stakeholder Management":{
+    Beginner:"Can effectively identify teams and other stakeholders directly impacted by your current project, gather their feedback, and work with your manager to appropriately integrate that feedback.\n\nIf issues happen, can communicate clearly and timely to your manager for resolution.",
+    Intermediate:"Fully aware of the set of stakeholders you need to align behind not only your current project, but any planned follow-on work.\n\nCan actively identify disagreements/conflicts between teams/members & practice effective listening to understand/resolve root causes of issues with other stakeholders.\n\nCan leverage facts and logic in forming coherent argument.",
+    Proficient:"Can fully identify the stakeholders that must be consulted on your project, and predict their feedback and make sure you have a plan to address it before reaching out.\n\nSeek to find product solutions that strike the right balance of stakeholder needs, especially in context of resource constraints.\n\nCan effectively make quick decision to escalate when a solution cannot be found.",
+    Expert:"Proactively build relationships across the company and keep key stakeholders up to speed with upcoming product plans that may impact their areas.\n\nActively manage these relationships to minimize the potential for surprise or that a project is derailed by last-minute feedback.\n\nUse good judgement to find the right balance of stakeholder needs: know when to push back/challenge your stakeholders.\n\nPersuasive presentations to senior management.",
+    Master:"Foster relationships with other leaders across the organization and factor their goals and needs into roadmap plans and strategy.\n\nMaster of sales pitch and influence — able to persuade even senior stakeholders to pursue new direction when conflict arises/disagreement happens.\n\nUse influence and impact to convince stakeholders to commit to difficult decisions.",
+  },
+  "Team Building":{
+    Beginner:"Set up frequent (bi-weekly) 1-1 catch up with your direct reports.\n\nSeek opportunities to provide support and advice to more junior members of the team, helping them to more effectively deliver on project goals.\n\nLeverage informal opportunities to mentor more junior members of your team.",
+    Intermediate:"Responsible for helping members of your team identify areas of strength and opportunity, and work with them to find ways to build their skills and improve against the relevant product competencies.\n\nA proactive manager of your team's careers at the company, continuously looking for opportunities to help them improve and develop into product managers.\n\nManage hiring process for your team.",
+    Proficient:"Proactively work with members of your team to develop career development plans that focus on skills building and identifying a career growth path that maximizes value.\n\nManage the team performance evaluation effectively, making sure each member is aware of their gap to new competency.",
+    Expert:"Proactively identifying skills gaps on your team & recommend ways to fill those gaps, resulting in a stronger overall Product team.\n\nPlay an active role in hiring great POs into the team.",
+    Master:"Create a leadership culture that values learning, development, coaching, and growth.\n\nExcel at growing both IC POs and People Managers.\n\nThink proactively about org structure, hiring, and team placement to set up your product team for maximum success.",
+  },
+  "Leadership Presence":{
+    Beginner:"Effectively unblock issues and support drive to solutions when there are cross functional conflicts.",
+    Intermediate:"Considered as a leader who challenges directly and cares personally by their cross-functional teams.\n\nEstablish presence in cross-functional meetings by offering thoughtful/insightful comments that drive to decisions for ZaloPay.\n\nInform the team full clarity on objectives, priorities and the why behind both.\n\nIdentify conflicts or roadblocks on area of responsibility; often able to resolve independently.",
+    Proficient:"Empower and inspires their team(s) and key individuals to deliver their best.\n\nExpert at facilitating meetings, leading discussions, and guiding the team towards well-defined goals.\n\nIdentify conflicts or roadblocks on area of responsibility quickly and make decisions with decisiveness.\n\nCreate an atmosphere of enthusiasm, fun, commitment and trust to maximize productivity.",
+    Expert:"Able to communicate and share product vision with clarity and persuasion.\n\nGreat at public speaking - engaging and enthusiastic; striking balance between depth of info and understandability.\n\nDeep knowledge of product area, can represent ZaloPay in meeting with C-suite from partner companies.",
+    Master:"Considered an excellent leader, inspiring people across the company.\n\nProactively support people across the organization to grow their leadership skills.\n\nA visible leader who excels in large scale meetings.",
+  },
+};
+
+// ─── STORAGE ──────────────────────────────────────────────────────────────────
+const SK = "zpo_promo_v3_local";
+const defaultState = () => ({
+  members:[
+    {id:1,name:"",level:"2.1"},
+    {id:2,name:"",level:"2.1"},
+    {id:3,name:"",level:"1.3"},
+  ],
+  conditions:{},
+  skills:{},
+});
+function loadState(){
+  try{const r=localStorage.getItem(SK);if(r)return JSON.parse(r);}catch{}
+  return defaultState();
+}
+
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
+const mColor=(m)=>({Beginner:"#6B7280",Intermediate:"#3B82F6",Proficient:"#10B981",Expert:"#8B5CF6",Master:"#F59E0B"}[m]||"#9CA3AF");
+const mBg=(m)=>({Beginner:"#F3F4F6",Intermediate:"#EFF6FF",Proficient:"#ECFDF5",Expert:"#F5F3FF",Master:"#FFFBEB"}[m]||"#F9FAFB");
+const aLabel=(a)=>({met:"✓ Met",promise:"~ Shows Promise",not_met:"✗ Gap"}[a]||"");
+const aColor=(a)=>({met:"#16A34A",promise:"#D97706",not_met:"#DC2626"}[a]||"#9CA3AF");
+const MBadge=({l})=>l&&l!=="-"
+  ?<span style={{display:"inline-block",padding:"2px 10px",borderRadius:20,fontSize:11,fontWeight:700,color:mColor(l),background:mBg(l),border:`1.5px solid ${mColor(l)}30`}}>{l}</span>
+  :<span style={{color:"#9CA3AF",fontSize:12}}>—</span>;
+const memberDisplayName=(m)=>m.name.trim()||`Member ${m.id}`;
+
+// ─── HTML EXPORT ──────────────────────────────────────────────────────────────
+function generateHTML(member, conditions, skills) {
+  const nl = NEXT_LEVEL[member.level];
+  const mc = conditions||{};
+  const ms = skills||{};
+  const dName = memberDisplayName(member);
+  const date = new Date().toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"});
+
+  const eyeData = EYE_LEVEL_SUMMARY[nl];
+  const eyeLevelSection = eyeData ? `
+  <div class="card">
+    <h2>⓪ Eye-Level Summary — What does ${nl} look like?</h2>
+    <div style="background:linear-gradient(135deg,#0F172A,#1E3A5F);border-radius:10px;padding:14px 18px;color:white;margin-bottom:14px">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#94A3B8;margin-bottom:5px">🎯 Target expectation</div>
+      <div style="font-size:14px;font-weight:800;color:#F1F5F9">${eyeData.headline}</div>
+    </div>
+    <div style="background:#FFFBEB;border:1.5px solid #FDE68A;border-radius:10px;padding:14px 16px;margin-bottom:14px">
+      <div style="font-size:11px;font-weight:800;text-transform:uppercase;color:#92400E;margin-bottom:10px">🏢 Nhân viên Chi nhánh → Giám đốc Chi nhánh</div>
+      <p style="margin:0 0 8px;font-size:12px;color:#78350F"><strong>👷 Trước (2.1):</strong> ${eyeData.analogy.before}</p>
+      <p style="margin:0 0 8px;font-size:12px;color:#064E3B"><strong>🏆 Sau (2.2):</strong> ${eyeData.analogy.after}</p>
+      <div style="background:white;border:1px solid #FDE68A;border-radius:8px;padding:10px 12px;margin-top:6px;font-size:12px;color:#374151"><strong>🗂 Mapping:</strong> ${eyeData.analogy.mapping}</div>
+    </div>
+    <div style="font-size:11px;font-weight:800;text-transform:uppercase;color:#374151;margin-bottom:10px">📋 3 Outputs cần demonstrate</div>
+    ${eyeData.outputs.map((o,i)=>`<div style="display:flex;gap:12px;align-items:flex-start;background:white;border:1.5px solid #E5E7EB;border-radius:10px;padding:12px 14px;margin-bottom:8px">
+      <div style="font-size:20px;flex-shrink:0">${o.icon}</div>
+      <div><div style="font-size:13px;font-weight:700;color:#0F172A;margin-bottom:4px"><span style="background:#1E293B;color:white;border-radius:6px;padding:1px 7px;font-size:10px;margin-right:6px">${i+1}</span>${o.title}</div><div style="font-size:12px;color:#475569;line-height:1.6">${o.desc}</div></div>
+    </div>`).join("")}
+  </div>` : "";
+
+  const condRows = PROMOTION_CONDITIONS.map(c=>{
+    const v=mc[c.id];
+    const icon=v===true?"✅":v===false?"❌":"⬜";
+    const statusText=v===true?"Met":v===false?"Not Met":"Not assessed";
+    const statusColor=v===true?"#16A34A":v===false?"#DC2626":"#6B7280";
+    const note=mc[c.id+"_note"]||"";
+    return `<tr>
+      <td style="padding:10px 14px;font-weight:600;font-size:13px">${icon} ${c.label}${c.isCompetency?` <span style="font-size:10px;color:#EF4444;background:#FEF2F2;border:1px solid #FECACA;padding:1px 6px;border-radius:10px;margin-left:4px">Has mandatory gates</span>`:" "}</td>
+      <td style="padding:10px 14px;font-size:12px;color:#6B7280">${c.desc}</td>
+      <td style="padding:10px 14px;font-weight:700;color:${statusColor};white-space:nowrap">${statusText}</td>
+      <td style="padding:10px 14px;font-size:12px;color:#374151;line-height:1.6">${note?note:`<span style="color:#9CA3AF">—</span>`}</td>
+    </tr>`;
+  }).join("");
+
+  const allMet=PROMOTION_CONDITIONS.every(c=>mc[c.id]===true);
+  const anyFail=PROMOTION_CONDITIONS.some(c=>mc[c.id]===false);
+  const verdict=allMet?`<div style="background:#F0FDF4;border:2px solid #16A34A;border-radius:8px;padding:10px 16px;color:#16A34A;font-weight:700;font-size:13px">✅ All conditions met — eligible for competency review</div>`
+    :anyFail?`<div style="background:#FEF2F2;border:2px solid #DC2626;border-radius:8px;padding:10px 16px;color:#DC2626;font-weight:700;font-size:13px">⛔ One or more conditions not met</div>`
+    :`<div style="background:#F8FAFC;border:2px solid #E5E7EB;border-radius:8px;padding:10px 16px;color:#6B7280;font-weight:700;font-size:13px">⬜ Assessment in progress</div>`;
+
+  // helper: escape single quotes for inline onclick
+  const esc = (s) => (s||"").replace(/'/g,"\\'").replace(/\n/g,"\\n");
+
+  // helper: build a maturity cell with badge + info button
+  const matCell = (matLevel, skillName) => {
+    if (!matLevel || matLevel === "-") return `<span style="color:#9CA3AF">—</span>`;
+    const desc = MATURITY_DESC[skillName]?.[matLevel] || "";
+    const descEsc = esc(desc);
+    const infoBtn = desc
+      ? `<button onclick="showDesc('${esc(skillName)}','${matLevel}','${descEsc}')"
+           title="View description"
+           style="margin-left:6px;width:18px;height:18px;border-radius:50%;border:1.5px solid ${mColor(matLevel)};background:white;color:${mColor(matLevel)};font-size:10px;font-weight:800;cursor:pointer;line-height:1;padding:0;vertical-align:middle">i</button>`
+      : "";
+    return `<span style="display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;color:${mColor(matLevel)};background:${mBg(matLevel)}">${matLevel}</span>${infoBtn}`;
+  };
+
+  let compRows="";
+  for(const {group,skills:gs} of COMPETENCY_GROUPS){
+    compRows+=`<tr><td colspan="5" style="padding:12px 14px 6px;font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:#374151;background:#F9FAFB;border-top:2px solid #E5E7EB">${group}</td></tr>`;
+    for(const sk of gs){
+      const cm=SKILL_MATURITY[sk]?.[member.level]||"-";
+      const nm=SKILL_MATURITY[sk]?.[nl]||"-";
+      const skSt=ms[sk]||{};
+      const isMand=MANDATORY_SKILLS.includes(sk);
+      const aBg=skSt.assessment==="met"?"#F0FDF4":skSt.assessment==="promise"?"#FFFBEB":skSt.assessment==="not_met"?"#FEF2F2":"white";
+      const noteHtml=skSt.assessment==="not_met"?skSt.gap:skSt.evidence;
+      const noteLabel=skSt.assessment==="not_met"?"🔧 Dev area":"📝 Evidence";
+      compRows+=`<tr style="background:${aBg}">
+        <td style="padding:9px 14px;font-size:13px;font-weight:600;border-left:${isMand?"3px solid #EF4444":"1px solid #F3F4F6"}">${isMand?`<span style="color:#EF4444;font-size:10px;font-weight:800;margin-right:4px">🔴</span>`:""}${sk}${isMand?` <span style="font-size:10px;color:#EF4444;background:#FEF2F2;border:1px solid #FECACA;padding:1px 5px;border-radius:8px">MANDATORY</span>`:""}</td>
+        <td style="padding:9px 14px;text-align:center">${matCell(cm,sk)}</td>
+        <td style="padding:9px 14px;text-align:center">${matCell(nm,sk)}</td>
+        <td style="padding:9px 14px;text-align:center;font-weight:700;font-size:12px;color:${aColor(skSt.assessment)}">${aLabel(skSt.assessment)||"—"}</td>
+        <td style="padding:9px 14px;font-size:12px;color:#374151;line-height:1.6">${noteHtml?`<div style="font-size:11px;font-weight:700;color:#6B7280;margin-bottom:4px">${noteLabel}</div><div style="font-size:12px">${noteHtml}</div>`:`<span style="color:#9CA3AF">—</span>`}</td>
+      </tr>`;
+    }
+  }
+
+  const qa=ms["Quality Assurance"]||{};
+  const sm=ms["Stakeholder Management"]||{};
+  const gatesPassed=qa.assessment==="met"&&sm.assessment==="met";
+  const overallVerdict=allMet&&gatesPassed
+    ?`<div style="background:#F0FDF4;border:2px solid #16A34A;border-radius:10px;padding:14px 18px;color:#16A34A;font-weight:800;font-size:15px;text-align:center">✅ RECOMMEND FOR PROMOTION</div>`
+    :(anyFail||(qa.assessment&&qa.assessment!=="met")||(sm.assessment&&sm.assessment!=="met"))
+    ?`<div style="background:#FEF2F2;border:2px solid #DC2626;border-radius:10px;padding:14px 18px;color:#DC2626;font-weight:800;font-size:15px;text-align:center">❌ NOT READY FOR PROMOTION</div>`
+    :`<div style="background:#F8FAFC;border:2px solid #94A3B8;border-radius:10px;padding:14px 18px;color:#64748B;font-weight:800;font-size:15px;text-align:center">⬜ ASSESSMENT IN PROGRESS</div>`;
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Promotion Evaluation — ${dName}</title>
+<style>
+  *{box-sizing:border-box}
+  body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#F1F5F9;margin:0;padding:24px 20px;color:#111827}
+  .container{max-width:900px;margin:0 auto}
+  .card{background:white;border-radius:14px;padding:24px;box-shadow:0 1px 4px rgba(0,0,0,0.08);margin-bottom:20px}
+  h1{font-size:22px;font-weight:900;color:#0F172A;margin:0 0 4px}
+  h2{font-size:16px;font-weight:800;color:#0F172A;margin:0 0 14px;padding-bottom:8px;border-bottom:2px solid #E5E7EB}
+  h3{font-size:13px;font-weight:700;color:#374151;margin:0 0 10px;text-transform:uppercase;letter-spacing:0.5px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  td,th{border-bottom:1px solid #F3F4F6;vertical-align:top}
+  th{padding:8px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#6B7280;background:#F9FAFB;text-align:left}
+  .header-banner{background:linear-gradient(135deg,#1E293B 0%,#334155 100%);border-radius:12px;padding:20px 24px;color:white;margin-bottom:20px}
+  .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700}
+  .meta{font-size:11px;color:#94A3B8;margin-top:2px}
+  .section-label{font-size:11px;color:#6B7280;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
+  @media print{body{background:white;padding:10px}.card{box-shadow:none;border:1px solid #E5E7EB}}
+  /* Rich text note content */
+  td ul,td ol{margin:4px 0 4px 18px;padding:0}
+  td li{margin-bottom:2px;font-size:12px}
+  td b,td strong{font-weight:700}
+  td i,td em{font-style:italic}
+  td u{text-decoration:underline}
+  #desc-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:999;align-items:center;justify-content:center;padding:20px}
+  #desc-overlay.show{display:flex}
+  #desc-box{background:white;border-radius:12px;max-width:560px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.25);overflow:hidden}
+  #desc-header{padding:14px 18px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #E5E7EB}
+  #desc-title{font-size:14px;font-weight:800;color:#0F172A;margin:0}
+  #desc-close{background:none;border:none;font-size:18px;cursor:pointer;color:#6B7280;line-height:1;padding:0}
+  #desc-body{padding:16px 18px;font-size:13px;color:#374151;line-height:1.7;max-height:60vh;overflow-y:auto}
+  #desc-body p{margin:0 0 8px}
+</style>
+<script>
+function showDesc(skill,level,raw){
+  document.getElementById('desc-title').textContent = skill + ' — ' + level;
+  const body = document.getElementById('desc-body');
+  body.innerHTML = raw.split('\\n\\n').map(p=>'<p>• '+p+'</p>').join('');
+  document.getElementById('desc-overlay').classList.add('show');
+}
+function closeDesc(){document.getElementById('desc-overlay').classList.remove('show');}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDesc();});
+</script>
+</head>
+<body>
+<div id="desc-overlay" onclick="if(event.target===this)closeDesc()">
+  <div id="desc-box">
+    <div id="desc-header">
+      <p id="desc-title"></p>
+      <button id="desc-close" onclick="closeDesc()">✕</button>
+    </div>
+    <div id="desc-body"></div>
+  </div>
+</div>
+<div class="container">
+  <div style="margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+    <div>
+      <h1>🧑‍💼 Promotion Evaluation</h1>
+      <p style="margin:0;font-size:13px;color:#64748B">ZPO Product Management Track · Generated ${date}</p>
+    </div>
+    <button onclick="window.print()" style="padding:8px 16px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;background:#0F172A;color:white;border:none">🖨️ Print / Save PDF</button>
+  </div>
+
+  <div class="header-banner">
+    <div style="font-size:20px;font-weight:900;margin-bottom:8px">${dName}</div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
+      <div><span style="font-size:12px;color:#94A3B8">Current: </span><span style="font-size:13px;font-weight:700;color:#60A5FA">${member.level} — ${LEVELS[member.level]?.title||""}</span></div>
+      <span style="color:#475569">→</span>
+      <div><span style="font-size:12px;color:#94A3B8">Target: </span><span style="font-size:13px;font-weight:700;color:#34D399">${nl} — ${LEVELS[nl]?.title||""}</span></div>
+    </div>
+    <div style="font-size:11px;color:#94A3B8;margin-top:6px">Target expectation: <em>${LEVELS[nl]?.eyeLevel||""}</em></div>
+    <div style="margin-top:12px;display:flex;gap:12px;flex-wrap:wrap">
+      <div style="font-size:11px;color:${qa.assessment==="met"?"#4ADE80":"#FCA5A5"};font-weight:700">${qa.assessment==="met"?"✅":"🔴"} Quality Assurance (Mandatory)</div>
+      <div style="font-size:11px;color:${sm.assessment==="met"?"#4ADE80":"#FCA5A5"};font-weight:700">${sm.assessment==="met"?"✅":"🔴"} Stakeholder Management (Mandatory)</div>
+    </div>
+  </div>
+
+  ${eyeLevelSection}
+
+  <div class="card">
+    <h2>① High-Level Conditions</h2>
+    <table>
+      <thead><tr><th>Condition</th><th>Description</th><th>Status</th><th>Notes</th></tr></thead>
+      <tbody>${condRows}</tbody>
+    </table>
+    <div style="margin-top:14px">${verdict}</div>
+  </div>
+
+  <div class="card">
+    <h2>② Competency Review</h2>
+    <div style="background:#FFFBEB;border:1.5px solid #FDE68A;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#92400E">
+      ⚠️ <strong>Mandatory gates:</strong> Quality Assurance & Stakeholder Management must reach next-level maturity. Failing either blocks promotion.
+    </div>
+    <table>
+      <thead><tr><th>Skill</th><th style="text-align:center">Current Maturity</th><th style="text-align:center">Target Maturity</th><th style="text-align:center">Assessment</th><th>Notes</th></tr></thead>
+      <tbody>${compRows}</tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>🔴 Mandatory Gate Summary</h2>
+    <table>
+      <thead><tr><th>Gate</th><th>Assessment</th><th>Current Maturity</th><th>Target Maturity</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr>
+          <td style="padding:10px 14px;font-weight:700;border-left:3px solid #EF4444">Quality Assurance</td>
+          <td style="padding:10px 14px;font-weight:700;color:${aColor(qa.assessment)}">${aLabel(qa.assessment)||"—"}</td>
+          <td style="padding:10px 14px">${matCell(SKILL_MATURITY["Quality Assurance"]?.[member.level]||"-","Quality Assurance")}</td>
+          <td style="padding:10px 14px">${matCell(SKILL_MATURITY["Quality Assurance"]?.[nl]||"-","Quality Assurance")}</td>
+          <td style="padding:10px 14px;font-weight:700;color:${qa.assessment==="met"?"#16A34A":"#DC2626"}">${qa.assessment==="met"?"✅ PASS":qa.assessment?"❌ FAIL":"⬜ Not assessed"}</td>
+        </tr>
+        <tr>
+          <td style="padding:10px 14px;font-weight:700;border-left:3px solid #EF4444">Stakeholder Management</td>
+          <td style="padding:10px 14px;font-weight:700;color:${aColor(sm.assessment)}">${aLabel(sm.assessment)||"—"}</td>
+          <td style="padding:10px 14px">${matCell(SKILL_MATURITY["Stakeholder Management"]?.[member.level]||"-","Stakeholder Management")}</td>
+          <td style="padding:10px 14px">${matCell(SKILL_MATURITY["Stakeholder Management"]?.[nl]||"-","Stakeholder Management")}</td>
+          <td style="padding:10px 14px;font-weight:700;color:${sm.assessment==="met"?"#16A34A":"#DC2626"}">${sm.assessment==="met"?"✅ PASS":sm.assessment?"❌ FAIL":"⬜ Not assessed"}</td>
+        </tr>
+      </tbody>
+    </table>
+    <div style="margin-top:16px">${overallVerdict}</div>
+  </div>
+</div>
+</body>
+</html>`;
+}
+
+// (export via modal — see App)
+
+// ─── SKILL ROW ────────────────────────────────────────────────────────────────
+// ─── RICH TEXT EDITOR ─────────────────────────────────────────────────────────
+const TOOLBAR_BTNS = [
+  { cmd:"bold",        icon:"B",      style:{fontWeight:900} },
+  { cmd:"italic",      icon:"I",      style:{fontStyle:"italic"} },
+  { cmd:"underline",   icon:"U",      style:{textDecoration:"underline"} },
+  { cmd:"insertUnorderedList", icon:"≡ •", style:{} },
+  { cmd:"insertOrderedList",   icon:"≡ 1", style:{} },
+];
+
+function RichEditor({value, onChange, placeholder, borderColor="#D1D5DB", minHeight=80}){
+  const ref = useRef(null);
+  const lastHtml = useRef(value||"");
+  const skipNext = useRef(false);
+
+  // Sync external value → DOM (only when truly different, e.g. assessment toggle clears field)
+  useEffect(()=>{
+    if(!ref.current) return;
+    if(skipNext.current){ skipNext.current=false; return; }
+    if(ref.current.innerHTML !== (value||"")){
+      ref.current.innerHTML = value||"";
+      lastHtml.current = value||"";
+    }
+  },[value]);
+
+  const handleInput = ()=>{
+    const html = ref.current.innerHTML;
+    if(html !== lastHtml.current){
+      lastHtml.current = html;
+      skipNext.current = true;
+      onChange(html);
+    }
+  };
+
+  const execCmd = (e, cmd)=>{
+    e.preventDefault();
+    ref.current.focus();
+    document.execCommand(cmd, false, null);
+    handleInput();
+  };
+
+  const isEmpty = !value || value === "<br>" || value === "";
+
+  return(
+    <div style={{border:`1.5px solid ${borderColor}`,borderRadius:6,overflow:"hidden",background:"white"}}>
+      {/* Toolbar */}
+      <div style={{display:"flex",gap:2,padding:"4px 6px",borderBottom:`1px solid ${borderColor}`,background:"#F9FAFB",flexWrap:"wrap"}}>
+        {TOOLBAR_BTNS.map(b=>(
+          <button
+            key={b.cmd}
+            onMouseDown={e=>execCmd(e,b.cmd)}
+            title={b.cmd}
+            style={{...b.style,padding:"2px 7px",border:"1px solid #E5E7EB",borderRadius:4,background:"white",fontSize:11,cursor:"pointer",color:"#374151",lineHeight:1.6,minWidth:24}}
+          >{b.icon}</button>
+        ))}
+        <span style={{width:1,background:"#E5E7EB",margin:"2px 4px",flexShrink:0}}/>
+        <button onMouseDown={e=>{e.preventDefault();ref.current.focus();document.execCommand("removeFormat",false,null);handleInput();}} title="Clear formatting" style={{padding:"2px 7px",border:"1px solid #E5E7EB",borderRadius:4,background:"white",fontSize:10,cursor:"pointer",color:"#9CA3AF",lineHeight:1.6}}>T̶</button>
+      </div>
+      {/* Editable area */}
+      <div style={{position:"relative"}}>
+        {isEmpty&&<div style={{position:"absolute",top:8,left:10,fontSize:12,color:"#9CA3AF",pointerEvents:"none",lineHeight:1.6,userSelect:"none"}}>{placeholder}</div>}
+        <div
+          ref={ref}
+          contentEditable
+          suppressContentEditableWarning
+          onInput={handleInput}
+          onBlur={handleInput}
+          style={{minHeight,padding:"8px 10px",fontSize:12,color:"#374151",lineHeight:1.65,outline:"none",wordBreak:"break-word"}}
+        />
+      </div>
+    </div>
+  );
+}
+
+// ─── SKILL ROW ────────────────────────────────────────────────────────────────
+function SkillRow({skill,currentLevel,skillState={},onSkillChange}){
+  const [exp,setExp]=useState(false);
+  const nl=NEXT_LEVEL[currentLevel];
+  const cm=SKILL_MATURITY[skill]?.[currentLevel]||"-";
+  const nm=SKILL_MATURITY[skill]?.[nl]||"-";
+  const cd=cm!=="-"?MATURITY_DESC[skill]?.[cm]:null;
+  const nd=nm!=="-"?MATURITY_DESC[skill]?.[nm]:null;
+  const isMand=MANDATORY_SKILLS.includes(skill);
+  const {assessment="",evidence="",gap=""}=skillState;
+  const upd=(f,v)=>onSkillChange(skill,{...skillState,[f]:v});
+  const setA=(v)=>{
+    const next=assessment===v?"":v;
+    // clear the opposite field when switching
+    onSkillChange(skill,{...skillState,assessment:next,evidence:next==="not_met"?"":evidence,gap:next!=="not_met"?"":gap});
+  };
+  const bg=assessment==="met"?"#F0FDF4":assessment==="promise"?"#FFFBEB":assessment==="not_met"?"#FEF2F2":"white";
+  return(
+    <div style={{border:`1.5px solid ${isMand?"#FCA5A540":"#E5E7EB"}`,borderLeft:isMand?"3px solid #EF4444":"1.5px solid #E5E7EB",borderRadius:8,overflow:"hidden",background:bg}}>
+      <div onClick={()=>setExp(!exp)} className="skill-row-head">
+        <div style={{display:"flex",alignItems:"center",gap:8,flex:1,minWidth:0}}>
+          {isMand&&<span style={{fontSize:10,color:"#EF4444",fontWeight:800,flexShrink:0}}>🔴</span>}
+          <span style={{fontSize:13,fontWeight:600,color:"#111827"}}>{skill}</span>
+          {isMand&&<span style={{fontSize:10,color:"#EF4444",fontWeight:700,background:"#FEF2F2",border:"1px solid #FECACA",padding:"1px 6px",borderRadius:10,flexShrink:0}}>MANDATORY</span>}
+        </div>
+        <div className="skill-badges">
+          <MBadge l={cm}/><span style={{color:"#9CA3AF",fontSize:12}}>→</span><MBadge l={nm}/>
+          {assessment&&<span style={{fontSize:11,fontWeight:700,color:aColor(assessment),whiteSpace:"nowrap"}}>{aLabel(assessment)}</span>}
+          <span style={{color:"#9CA3AF",fontSize:14,marginLeft:2}}>{exp?"▲":"▼"}</span>
+        </div>
+      </div>
+      {exp&&(
+        <div style={{padding:"0 14px 14px",borderTop:"1px solid #E5E7EB"}}>
+          <div className="skill-desc-grid">
+            <div style={{background:"white",border:"1px solid #E5E7EB",borderRadius:8,padding:12}}>
+              <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}>
+                <span style={{fontSize:11,fontWeight:700,color:"#6B7280",textTransform:"uppercase",letterSpacing:0.5}}>Current ({LEVELS[currentLevel]?.title}) — Expected</span>
+                <MBadge l={cm}/>
+              </div>
+              {cd?<div style={{fontSize:12,color:"#374151",lineHeight:1.6}}>{cd.split("\n\n").map((p,i)=><p key={i} style={{margin:"0 0 6px"}}>• {p}</p>)}</div>:<p style={{fontSize:12,color:"#9CA3AF"}}>No specific expectation at this level.</p>}
+            </div>
+            <div style={{background:"white",border:`1px solid ${isMand?"#FECACA":"#E5E7EB"}`,borderRadius:8,padding:12}}>
+              <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}>
+                <span style={{fontSize:11,fontWeight:700,color:"#6B7280",textTransform:"uppercase",letterSpacing:0.5}}>Next Level ({LEVELS[nl]?.title}) — Target</span>
+                <MBadge l={nm}/>
+                {cm===nm&&<span style={{fontSize:10,color:"#6B7280",background:"#F3F4F6",border:"1px solid #E5E7EB",padding:"1px 6px",borderRadius:10}}>Same level</span>}
+              </div>
+              {nd?<div style={{fontSize:12,color:"#374151",lineHeight:1.6}}>{nd.split("\n\n").map((p,i)=><p key={i} style={{margin:"0 0 6px"}}>• {p}</p>)}</div>:<p style={{fontSize:12,color:"#9CA3AF"}}>No specific expectation at next level.</p>}
+            </div>
+          </div>
+          <div style={{marginTop:12,background:"white",border:"1px solid #E5E7EB",borderRadius:8,padding:12}}>
+            <p style={{fontSize:11,fontWeight:700,color:"#6B7280",textTransform:"uppercase",letterSpacing:0.5,marginBottom:8}}>Manager Assessment</p>
+            <div className="assess-btns">
+              {[{v:"met",l:"✅ Already at next level",c:"#16A34A"},{v:"promise",l:"🔶 Shows promise",c:"#D97706"},{v:"not_met",l:"❌ Gap exists",c:"#DC2626"}].map(o=>(
+                <button key={o.v} onClick={()=>setA(o.v)} className="assess-btn" style={{background:assessment===o.v?o.c:"white",color:assessment===o.v?"white":o.c,border:`1.5px solid ${o.c}`}}>{o.l}</button>
+              ))}
+            </div>
+            {(assessment==="met"||assessment==="promise")&&(
+              <div>
+                <label style={{fontSize:11,fontWeight:600,color:"#374151",display:"block",marginBottom:4}}>📝 Evidence / Supporting observations</label>
+                <RichEditor
+                  value={evidence}
+                  onChange={v=>upd("evidence",v)}
+                  placeholder="Describe specific examples, projects, or behaviors that demonstrate this skill at the next level..."
+                  borderColor="#D1D5DB"
+                  minHeight={80}
+                />
+              </div>
+            )}
+            {assessment==="not_met"&&(
+              <div>
+                <label style={{fontSize:11,fontWeight:600,color:"#374151",display:"block",marginBottom:4}}>🔧 Room for improvement / Development actions</label>
+                <RichEditor
+                  value={gap}
+                  onChange={v=>upd("gap",v)}
+                  placeholder="Describe what the member needs to demonstrate, specific situations to practice, or development actions to close this gap..."
+                  borderColor="#FECACA"
+                  minHeight={80}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CompGroup({group,skills,currentLevel,skillsState,onSkillChange}){
+  const [open,setOpen]=useState(true);
+  return(
+    <div style={{border:"1.5px solid #E5E7EB",borderRadius:10,overflow:"hidden",marginBottom:10}}>
+      <div onClick={()=>setOpen(!open)} style={{background:"#F9FAFB",padding:"10px 14px",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <span style={{fontSize:13,fontWeight:800,color:"#111827",textTransform:"uppercase",letterSpacing:0.5}}>{group}</span>
+        <span style={{color:"#9CA3AF"}}>{open?"▲":"▼"}</span>
+      </div>
+      {open&&<div style={{padding:10,display:"flex",flexDirection:"column",gap:8}}>
+        {skills.map(sk=><SkillRow key={sk} skill={sk} currentLevel={currentLevel} skillState={skillsState?.[sk]} onSkillChange={onSkillChange}/>)}
+      </div>}
+    </div>
+  );
+}
+
+// ─── EYE-LEVEL SUMMARY SECTION ───────────────────────────────────────────────
+function EyeLevelSummarySection({level}){
+  const nl=NEXT_LEVEL[level];
+  const data=EYE_LEVEL_SUMMARY[nl];
+  if(!data) return(
+    <div style={{padding:"16px",background:"#F9FAFB",border:"1.5px solid #E5E7EB",borderRadius:10,color:"#9CA3AF",fontSize:13,textAlign:"center"}}>
+      No eye-level summary defined for this target level.
+    </div>
+  );
+  return(
+    <div style={{display:"flex",flexDirection:"column",gap:12}}>
+      <div style={{background:"linear-gradient(135deg,#0F172A 0%,#1E3A5F 100%)",borderRadius:10,padding:"16px 18px",color:"white"}}>
+        <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:1,color:"#94A3B8",marginBottom:6}}>🎯 What does success look like at {nl}?</div>
+        <div style={{fontSize:15,fontWeight:800,lineHeight:1.4,color:"#F1F5F9"}}>{data.headline}</div>
+      </div>
+      <div style={{background:"#FFFBEB",border:"1.5px solid #FDE68A",borderRadius:10,padding:"14px 16px"}}>
+        <div style={{fontSize:11,fontWeight:800,textTransform:"uppercase",letterSpacing:0.5,color:"#92400E",marginBottom:10}}>🏢 Nhân viên Chi nhánh → Giám đốc Chi nhánh</div>
+        <div style={{display:"flex",flexDirection:"column",gap:8}}>
+          <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
+            <span style={{fontSize:18,flexShrink:0}}>👷</span>
+            <div>
+              <div style={{fontSize:11,fontWeight:700,color:"#B45309",marginBottom:2}}>Trước (level 2.1)</div>
+              <div style={{fontSize:12,color:"#78350F",lineHeight:1.6}}>{data.analogy.before}</div>
+            </div>
+          </div>
+          <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
+            <span style={{fontSize:18,flexShrink:0}}>🏆</span>
+            <div>
+              <div style={{fontSize:11,fontWeight:700,color:"#065F46",marginBottom:2}}>Sau (level 2.2)</div>
+              <div style={{fontSize:12,color:"#064E3B",lineHeight:1.6}}>{data.analogy.after}</div>
+            </div>
+          </div>
+          <div style={{background:"white",border:"1px solid #FDE68A",borderRadius:8,padding:"10px 12px",marginTop:2}}>
+            <div style={{fontSize:11,fontWeight:700,color:"#92400E",marginBottom:4}}>🗂 Mapping thực tế</div>
+            <div style={{fontSize:12,color:"#374151",lineHeight:1.7}}>{data.analogy.mapping}</div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div style={{fontSize:11,fontWeight:800,textTransform:"uppercase",letterSpacing:0.5,color:"#374151",marginBottom:8}}>📋 3 Outputs cần demonstrate được ở level 2.2</div>
+        <div style={{display:"flex",flexDirection:"column",gap:8}}>
+          {data.outputs.map((o,i)=>(
+            <div key={i} style={{background:"white",border:"1.5px solid #E5E7EB",borderRadius:10,padding:"12px 14px",display:"flex",gap:12,alignItems:"flex-start"}}>
+              <div style={{fontSize:22,flexShrink:0,marginTop:1}}>{o.icon}</div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:13,fontWeight:700,color:"#0F172A",marginBottom:4}}>
+                  <span style={{display:"inline-block",background:"#1E293B",color:"white",borderRadius:6,padding:"1px 7px",fontSize:10,fontWeight:800,marginRight:6}}>{i+1}</span>
+                  {o.title}
+                </div>
+                <div style={{fontSize:12,color:"#475569",lineHeight:1.65}}>{o.desc}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── MEMBER TAB ───────────────────────────────────────────────────────────────
+function MemberTab({member,onMemberChange,condState,onCondChange,skillsState,onSkillChange,onExportHTML}){
+  const [sec,setSec]=useState("eyelevel");
+  const nl=NEXT_LEVEL[member.level];
+
+  const toggleC=(id,val)=>onCondChange({...condState,[id]:condState?.[id]===val?null:val});
+  const updNote=(id,val)=>onCondChange({...condState,[id+"_note"]:val});
+  const allMet=PROMOTION_CONDITIONS.every(c=>condState?.[c.id]===true);
+  const anyFail=PROMOTION_CONDITIONS.some(c=>condState?.[c.id]===false);
+  const qaA=skillsState?.["Quality Assurance"]?.assessment;
+  const smA=skillsState?.["Stakeholder Management"]?.assessment;
+
+  return(
+    <div>
+      {/* Member header */}
+      <div className="member-banner" style={{marginBottom:14}}>
+        <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:12,flexWrap:"wrap"}}>
+          <div style={{flex:1,minWidth:0}}>
+            <input
+              value={member.name}
+              onChange={e=>onMemberChange({...member,name:e.target.value})}
+              placeholder="Enter member name…"
+              className="member-name-input"
+            />
+            <div className="level-row">
+              <span style={{fontSize:11,color:"#94A3B8",flexShrink:0}}>Current:</span>
+              <select value={member.level} onChange={e=>onMemberChange({...member,level:e.target.value})} className="level-select">
+                {LEVEL_OPTIONS.map(l=><option key={l} value={l}>{l} — {LEVELS[l]?.title}{LEVELS[l]?.track?" ("+LEVELS[l].track+")" :""}</option>)}
+              </select>
+            </div>
+            {nl&&(
+              <div style={{display:"flex",alignItems:"center",gap:5,marginTop:4,flexWrap:"wrap"}}>
+                <span style={{fontSize:11,color:"#64748B"}}>→</span>
+                <span style={{fontSize:11,color:"#94A3B8"}}>Target:</span>
+                <span style={{fontSize:11,fontWeight:700,color:"#34D399"}}>{nl} — {LEVELS[nl]?.title}</span>
+                {LEVELS[nl]?.track&&<span style={{fontSize:10,fontWeight:700,padding:"1px 7px",borderRadius:10,background:LEVELS[nl].track==="IC"?"#1E3A8A":"#4C1D95",color:"white"}}>{LEVELS[nl].track}</span>}
+              </div>
+            )}
+            {nl&&<p style={{fontSize:10,color:"#94A3B8",marginTop:4,marginBottom:0,lineHeight:1.4}}><em>{LEVELS[nl]?.eyeLevel}</em></p>}
+          </div>
+          <div className="gate-status">
+            <div style={{fontSize:10,color:"#64748B",textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>Mandatory Gates</div>
+            <div style={{fontSize:11,fontWeight:600,color:qaA==="met"?"#4ADE80":qaA==="not_met"?"#FCA5A5":"#FCA5A5"}}>{qaA==="met"?"✅":qaA==="not_met"?"❌":"🔴"} Quality Assurance</div>
+            <div style={{fontSize:11,fontWeight:600,color:smA==="met"?"#4ADE80":smA==="not_met"?"#FCA5A5":"#FCA5A5",marginTop:2}}>{smA==="met"?"✅":smA==="not_met"?"❌":"🔴"} Stakeholder Mgmt</div>
+            <button onClick={onExportHTML} className="export-btn">⬇ Export HTML</button>
+          </div>
+        </div>
+      </div>
+
+      {/* Section tabs */}
+      <div className="section-tabs">
+        {[{id:"eyelevel",l:"⓪ Eye-Level Summary"},{id:"conditions",l:"① High-Level Conditions"},{id:"competency",l:"② Competency Review"}].map(s=>(
+          <button key={s.id} onClick={()=>setSec(s.id)} className="sec-btn" style={{background:sec===s.id?"#1E293B":"white",color:sec===s.id?"white":"#374151",border:`2px solid ${sec===s.id?"#1E293B":"#E5E7EB"}`}}>{s.l}</button>
+        ))}
+      </div>
+
+      {/* EYE-LEVEL SUMMARY SECTION */}
+      {sec==="eyelevel"&&(
+        <div>
+          <p style={{fontSize:12,color:"#6B7280",marginBottom:12}}>Tổng quan về kỳ vọng ở level tiếp theo — đây là "bức tranh lớn" trước khi đi vào từng điều kiện cụ thể.</p>
+          <EyeLevelSummarySection level={member.level}/>
+        </div>
+      )}
+
+      {/* CONDITIONS SECTION */}
+      {sec==="conditions"&&(
+        <div>
+          <p style={{fontSize:12,color:"#6B7280",marginBottom:12}}>Review the 3 high-level promotion conditions. Add supporting notes for each assessment.</p>
+          <div style={{display:"flex",flexDirection:"column",gap:12}}>
+            {PROMOTION_CONDITIONS.map(c=>{
+              const v=condState?.[c.id];
+              const note=condState?.[c.id+"_note"]||"";
+              const notePlaceholder=v===true
+                ?"Describe the evidence or supporting observations for this condition being met…"
+                :v===false
+                ?"Describe what is missing or needs to improve for this condition…"
+                :"Add notes…";
+              return(
+                <div key={c.id} style={{background:v===true?"#F0FDF4":v===false?"#FEF2F2":"#F9FAFB",border:`1.5px solid ${v===true?"#BBF7D0":v===false?"#FECACA":"#E5E7EB"}`,borderRadius:10,padding:"12px 14px"}}>
+                  <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:8,flexWrap:"wrap"}}>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:4,flexWrap:"wrap"}}>
+                        <span style={{fontSize:13,fontWeight:700,color:"#111827"}}>{c.label}</span>
+                        {c.isCompetency&&<span style={{fontSize:10,color:"#EF4444",fontWeight:700,background:"#FEF2F2",border:"1px solid #FECACA",padding:"1px 6px",borderRadius:10}}>Has mandatory gates</span>}
+                      </div>
+                      <p style={{fontSize:12,color:"#6B7280",margin:0,lineHeight:1.5}}>{c.desc}</p>
+                    </div>
+                    <div className="cond-btns">
+                      <button onClick={()=>toggleC(c.id,true)} className="cond-btn" style={{background:v===true?"#16A34A":"white",color:v===true?"white":"#16A34A",border:"1.5px solid #16A34A"}}>✓ Met</button>
+                      <button onClick={()=>toggleC(c.id,false)} className="cond-btn" style={{background:v===false?"#DC2626":"white",color:v===false?"white":"#DC2626",border:"1.5px solid #DC2626"}}>✗ Not Met</button>
+                    </div>
+                  </div>
+
+                  {/* Notes textarea */}
+                  {(v!=null||c.isCompetency)&&(
+                    <div style={{marginTop:10}}>
+                      {c.isCompetency&&v!=null&&(
+                        <button onClick={()=>setSec("competency")} style={{marginBottom:8,padding:"5px 12px",borderRadius:6,fontSize:12,fontWeight:700,cursor:"pointer",background:"#1E293B",color:"white",border:"none"}}>
+                          → Go to Competency Review ↗
+                        </button>
+
+                      )}
+                      {v!=null&&(
+                        <>
+                          <label style={{fontSize:11,fontWeight:600,color:"#374151",display:"block",marginBottom:4}}>
+                            {v===true?"📝 Evidence / Supporting observations":"🔧 What is missing / needs improvement"}
+                          </label>
+                          <RichEditor
+                            value={note}
+                            onChange={val=>updNote(c.id,val)}
+                            placeholder={notePlaceholder}
+                            borderColor={v===true?"#BBF7D0":"#FECACA"}
+                            minHeight={70}
+                          />
+                        </>
+                      )}
+                      {c.isCompetency&&v==null&&(
+                        <button onClick={()=>setSec("competency")} style={{padding:"5px 12px",borderRadius:6,fontSize:12,fontWeight:700,cursor:"pointer",background:"#1E293B",color:"white",border:"none"}}>
+                          → Go to Competency Review ↗
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            {(allMet||anyFail)&&(
+              <div style={{padding:"10px 14px",borderRadius:10,background:allMet?"#F0FDF4":"#FEF2F2",border:`2px solid ${allMet?"#16A34A":"#DC2626"}`,fontWeight:700,fontSize:13,color:allMet?"#16A34A":"#DC2626",textAlign:"center"}}>
+                {allMet?"✅ All conditions met — eligible to proceed to competency review":"⛔ One or more conditions not met — further review needed"}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* COMPETENCY SECTION */}
+      {sec==="competency"&&(
+        <div>
+          <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:12,padding:"10px 14px",background:"#FFFBEB",border:"1.5px solid #FDE68A",borderRadius:8}}>
+            <span style={{fontSize:14}}>⚠️</span>
+            <p style={{fontSize:12,color:"#92400E",margin:0}}><strong>Mandatory gates:</strong> Quality Assurance & Stakeholder Management must reach next-level maturity. Failing either blocks promotion regardless of other competencies.</p>
+          </div>
+          {COMPETENCY_GROUPS.map(g=>(
+            <CompGroup key={g.group} group={g.group} skills={g.skills} currentLevel={member.level} skillsState={skillsState} onSkillChange={onSkillChange}/>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── APP ──────────────────────────────────────────────────────────────────────
+function App(){
+  const [st,setSt]=useState(()=>loadState());
+  const [tab,setTab]=useState(st.members[0].id);
+  const [flash,setFlash]=useState(false);
+  const [htmlModal,setHtmlModal]=useState({open:false,code:"",name:""});
+  const [copied,setCopied]=useState(false);
+
+  useEffect(()=>{
+    try{localStorage.setItem(SK,JSON.stringify(st));}catch{}
+    setFlash(true);
+    const t=setTimeout(()=>setFlash(false),1200);
+    return()=>clearTimeout(t);
+  },[st]);
+
+  const updMember=(id,m)=>setSt(s=>({...s,members:s.members.map(x=>x.id===id?m:x)}));
+  const updCond=(mid,c)=>setSt(s=>({...s,conditions:{...s.conditions,[mid]:c}}));
+  const updSkill=(mid,sk,skSt)=>setSt(s=>({...s,skills:{...s.skills,[mid]:{...s.skills[mid],[sk]:skSt}}}));
+
+  const active=st.members.find(m=>m.id===tab);
+
+  return(
+    <div style={{fontFamily:"'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif",background:"#F1F5F9",minHeight:"100vh"}}>
+      <style>{`
+        *{box-sizing:border-box}
+        .app-wrap{padding:16px 12px;max-width:900px;margin:0 auto}
+        @media(min-width:600px){.app-wrap{padding:24px 20px}}
+
+        /* Header */
+        .app-header{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:16px}
+        .app-title{font-size:18px;font-weight:900;color:#0F172A;margin:0;letter-spacing:-0.5px}
+        @media(min-width:480px){.app-title{font-size:22px}}
+        .app-subtitle{font-size:12px;color:#64748B;margin-top:3px}
+
+        /* Member tabs */
+        .member-tabs{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px}
+        .member-tabs::-webkit-scrollbar{height:3px}
+        .member-tabs::-webkit-scrollbar-thumb{background:#CBD5E1;border-radius:3px}
+        .tab-btn{padding:8px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0}
+        @media(min-width:480px){.tab-btn{padding:8px 16px;font-size:13px}}
+
+        /* Content card */
+        .content-card{background:white;border-radius:12px;padding:14px;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+        @media(min-width:480px){.content-card{padding:20px}}
+
+        /* Member header banner */
+        .member-banner{background:linear-gradient(135deg,#1E293B 0%,#334155 100%);border-radius:10px;padding:14px 16px;margin-bottom:14px}
+        .member-banner-inner{display:flex;align-items:flex-start;justify-content:space-between;gap:12;flex-wrap:wrap}
+        .member-name-input{font-size:16px;font-weight:800;color:white;background:transparent;border:none;outline:none;border-bottom:1px dashed #64748B;width:100%;padding-bottom:2px}
+        @media(min-width:480px){.member-name-input{font-size:18px}}
+        .level-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:6px}
+        .level-select{font-size:11px;font-weight:700;color:#60A5FA;background:#1E3A5F;border:1px solid #3B5998;border-radius:6px;padding:3px 6px;cursor:pointer;max-width:180px}
+        @media(min-width:480px){.level-select{font-size:12px;max-width:none}}
+        .gate-status{text-align:right;flex-shrink:0;min-width:140px}
+        @media(max-width:479px){.gate-status{text-align:left;min-width:0;margin-top:8px;width:100%}}
+        .export-btn{margin-top:8px;padding:6px 12px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;background:#F1F5F9;color:#0F172A;border:1.5px solid #CBD5E1;white-space:nowrap}
+
+        /* Section tabs */
+        .section-tabs{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+        .sec-btn{padding:7px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0}
+        @media(min-width:480px){.sec-btn{padding:8px 16px;font-size:13px}}
+
+        /* Skill row expand panel — 2 col on desktop, 1 col on mobile */
+        .skill-desc-grid{display:grid;grid-template-columns:1fr;gap:10px;margin-top:10px}
+        @media(min-width:580px){.skill-desc-grid{grid-template-columns:1fr 1fr}}
+
+        /* Condition card button row */
+        .cond-btns{display:flex;gap:6px;flex-shrink:0;margin-top:2px}
+        .cond-btn{padding:5px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap}
+        @media(min-width:400px){.cond-btn{padding:4px 12px;font-size:12px}}
+
+        /* Assessment buttons in skill row */
+        .assess-btns{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+        .assess-btn{flex:1;min-width:100px;padding:6px 6px;border-radius:6px;font-size:10px;font-weight:600;cursor:pointer;text-align:center}
+        @media(min-width:480px){.assess-btn{font-size:11px;padding:6px 8px}}
+
+        /* Skill row header */
+        .skill-row-head{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;cursor:pointer;gap:8px}
+        .skill-badges{display:flex;align-items:center;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end}
+
+        /* Legend */
+        .legend{margin-top:14px;display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+
+        /* Rich editor content */
+        [contenteditable] ul,[contenteditable] ol{margin:4px 0 4px 18px;padding:0}
+        [contenteditable] li{margin-bottom:2px}
+
+        /* HTML modal */
+        .html-modal-box{background:white;border-radius:14px;width:100%;max-width:780px;max-height:92vh;display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(0,0,0,0.3)}
+        .html-modal-header{padding:12px 16px;border-bottom:1px solid #E5E7EB;display:flex;justify-content:space-between;align-items:flex-start;flex-shrink:0;gap:8px}
+        .html-modal-title{margin:0;font-size:14px;font-weight:800;color:#0F172A}
+        @media(min-width:480px){.html-modal-title{font-size:15px}}
+        .html-modal-actions{display:flex;gap:6px;align-items:center;flex-shrink:0}
+      `}</style>
+
+      <div className="app-wrap">
+
+        {/* Header */}
+        <div className="app-header">
+          <div>
+            <h1 className="app-title">🧑‍💼 Promotion Evaluation Tool</h1>
+            <p className="app-subtitle">ZPO Product Management Track · Manager's Review Workspace</p>
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:flash?"#16A34A":"#9CA3AF",background:flash?"#F0FDF4":"#F8FAFC",border:`1px solid ${flash?"#BBF7D0":"#E5E7EB"}`,padding:"4px 10px",borderRadius:20,transition:"all 0.3s",flexShrink:0}}>
+            <span>{flash?"●":"○"}</span>{flash?"Saved":"Auto-save on"}
+          </div>
+        </div>
+
+        {/* Member tabs */}
+        <div className="member-tabs">
+          {st.members.map(m=>(
+            <button key={m.id} onClick={()=>setTab(m.id)} className="tab-btn" style={{background:tab===m.id?"#0F172A":"white",color:tab===m.id?"white":"#374151",border:`2px solid ${tab===m.id?"#0F172A":"#E5E7EB"}`}}>
+              {memberDisplayName(m)} <span style={{marginLeft:4,fontSize:10,fontWeight:600,opacity:0.7}}>Lv {m.level}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Content */}
+        <div className="content-card">
+          {active&&(
+            <MemberTab
+              member={active}
+              onMemberChange={m=>updMember(active.id,m)}
+              condState={st.conditions[active.id]}
+              onCondChange={c=>updCond(active.id,c)}
+              skillsState={st.skills[active.id]}
+              onSkillChange={(sk,skSt)=>updSkill(active.id,sk,skSt)}
+              onExportHTML={()=>{const code=generateHTML(active,st.conditions[active.id]||{},st.skills[active.id]||{});setHtmlModal({open:true,code,name:memberDisplayName(active)});}}
+            />
+          )}
+        </div>
+
+        {/* Maturity legend */}
+        <div className="legend">
+          {["Beginner","Intermediate","Proficient","Expert","Master"].map(m=>(
+            <div key={m} style={{display:"flex",alignItems:"center",gap:5}}>
+              <div style={{width:10,height:10,borderRadius:"50%",background:mColor(m),flexShrink:0}}/>
+              <span style={{fontSize:11,color:"#6B7280"}}>{m}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* HTML Export Modal */}
+      {htmlModal.open&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.55)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,padding:"12px"}}>
+          <div className="html-modal-box">
+            <div className="html-modal-header">
+              <div style={{minWidth:0}}>
+                <h2 className="html-modal-title">📄 HTML Export — {htmlModal.name}</h2>
+                <p style={{margin:"2px 0 0",fontSize:11,color:"#6B7280"}}>Copy & save as <code style={{background:"#F3F4F6",padding:"1px 4px",borderRadius:3,fontSize:10}}>.html</code></p>
+              </div>
+              <div className="html-modal-actions">
+                <button
+                  onClick={()=>{
+                    try{const ta=document.createElement("textarea");ta.value=htmlModal.code;ta.style.cssText="position:fixed;top:0;left:0;opacity:0;pointer-events:none";document.body.appendChild(ta);ta.focus();ta.select();document.execCommand("copy");document.body.removeChild(ta);setCopied(true);setTimeout(()=>setCopied(false),2000);}catch(e){}
+                  }}
+                  style={{padding:"7px 14px",borderRadius:8,fontSize:12,fontWeight:700,cursor:"pointer",background:copied?"#16A34A":"#0F172A",color:"white",border:"none",transition:"background 0.2s",whiteSpace:"nowrap"}}
+                >
+                  {copied?"✓ Copied!":"Copy HTML"}
+                </button>
+                <button onClick={()=>setHtmlModal({open:false,code:"",name:""})} style={{padding:"7px 11px",borderRadius:8,fontSize:13,cursor:"pointer",background:"#F1F5F9",color:"#374151",border:"1px solid #E5E7EB",fontWeight:700}}>✕</button>
+              </div>
+            </div>
+            <div style={{flex:1,overflowY:"auto",padding:12}}>
+              <pre style={{margin:0,fontSize:11,lineHeight:1.6,color:"#1E293B",whiteSpace:"pre-wrap",wordBreak:"break-all",fontFamily:"'Fira Code','Courier New',monospace",background:"#F8FAFC",padding:12,borderRadius:8,border:"1px solid #E2E8F0",userSelect:"all"}}>
+                {htmlModal.code}
+              </pre>
+            </div>
+            <div style={{padding:"8px 16px",borderTop:"1px solid #E5E7EB",background:"#F8FAFC",borderRadius:"0 0 14px 14px",fontSize:10,color:"#94A3B8"}}>
+              💡 Click code area → <strong>Ctrl+A</strong> → <strong>Ctrl+C</strong>, or use Copy HTML above.
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+</script>
+</body>
+</html>
