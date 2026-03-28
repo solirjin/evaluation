@@ -101,32 +101,67 @@ const COMPETENCY_GROUPS = [
 ];
 const MANDATORY_SKILLS = ["Quality Assurance","Stakeholder Management"];
 
-// ─── EYE-LEVEL SUMMARY (per level, editable context) ─────────────────────────
+// ─── PRODUCTS ─────────────────────────────────────────────────────────────────
+const PRODUCTS = {
+  bnpl:      { label: "BNPL",       color: "#3B82F6" },
+  cashloan:  { label: "Cash Loan",  color: "#10B981" },
+};
+
+// ─── EYE-LEVEL SUMMARY (per product, per level) ───────────────────────────────
 const EYE_LEVEL_SUMMARY = {
-  "2.2": {
-    headline: "Own a significant product scope end to end — from strategy to results",
-    analogy: {
-      before: "Trước (2.1): Bạn là nhân viên quản lý một chi nhánh nhỏ — lo vận hành hàng ngày, báo cáo lên cấp trên, xử lý vấn đề khi được giao. Mọi quyết định lớn đều cần LM duyệt, chiến lược do LM define.",
-      after:  "Sau (2.2): Bạn là Giám đốc Chi nhánh — bạn chịu trách nhiệm toàn bộ P&L của chi nhánh, tự define chiến lược, phân bổ nhân sự vào từng mảng, và biết rõ từng bộ phận đang làm gì, stuck ở đâu. Cấp trên chỉ cần hỏi là bạn có ngay câu trả lời — không cần đợi tổng hợp.",
-      mapping: "Chi nhánh = BNPL platform. Bạn = Branch Director. Hào và dedicated resources = trưởng các phòng ban (Onboarding Dept, Payment Dept…). Mỗi partner/flow (CIMB, VP, Mini…) = một product line riêng trong chi nhánh. LM = HQ — vẫn set direction chung, nhưng không cần lo vận hành hàng ngày nữa.",
+  bnpl: {
+    "2.2": {
+      headline: "Own a significant product scope end to end — from strategy to results",
+      analogy: {
+        before: "Trước (2.1): Bạn là nhân viên quản lý một chi nhánh nhỏ — lo vận hành hàng ngày, báo cáo lên cấp trên, xử lý vấn đề khi được giao. Mọi quyết định lớn đều cần LM duyệt, chiến lược do LM define.",
+        after:  "Sau (2.2): Bạn là Giám đốc Chi nhánh — bạn chịu trách nhiệm toàn bộ P&L của chi nhánh, tự define chiến lược, phân bổ nhân sự vào từng mảng, và biết rõ từng bộ phận đang làm gì, stuck ở đâu. Cấp trên chỉ cần hỏi là bạn có ngay câu trả lời — không cần đợi tổng hợp.",
+        mapping: "Chi nhánh = BNPL platform. Bạn = Branch Director. Hào và dedicated resources = trưởng các phòng ban (Onboarding Dept, Payment Dept…). Mỗi partner/flow (CIMB, VP, Mini…) = một product line riêng trong chi nhánh. LM = HQ — vẫn set direction chung, nhưng không cần lo vận hành hàng ngày nữa.",
+      },
+      outputs: [
+        {
+          icon: "🗺️",
+          title: "BNPL Product Architecture Overview",
+          desc: "Nắm và maintain được toàn bộ product architecture của BNPL: Partner layer (Mini, CIMB, LFVN, VP, VC), Flow layer (Onboarding → Payment → Refund → Repayment → Account Mgmt → Renewal), Functional layer (Project Mgmt, Operation, Reconciliation). Không cần LM explain — bạn là người giải thích cho người khác.",
+        },
+        {
+          icon: "👥",
+          title: "Dedicated Resource Allocation",
+          desc: "Xác định rõ Hào và các resource khác sẽ take in charge scope nào trong BNPL. Bạn không cần làm tất cả — nhưng bạn phải biết ai đang làm gì, và khi nào cần escalate / re-allocate.",
+        },
+        {
+          icon: "📊",
+          title: "Workstream Progress Visibility",
+          desc: "Nắm được execution detail của tất cả workstream BNPL: problem đang gặp là gì, solution đã define chưa, blocker ở đâu, ETA có realistic không. Không đợi sếp hỏi — bạn chủ động có cái nhìn này mọi lúc.",
+        },
+      ],
     },
-    outputs: [
-      {
-        icon: "🗺️",
-        title: "BNPL Product Architecture Overview",
-        desc: "Nắm và maintain được toàn bộ product architecture của BNPL: Partner layer (Mini, CIMB, LFVN, VP, VC), Flow layer (Onboarding → Payment → Refund → Repayment → Account Mgmt → Renewal), Functional layer (Project Mgmt, Operation, Reconciliation). Không cần LM explain — bạn là người giải thích cho người khác.",
+  },
+  cashloan: {
+    "2.2": {
+      headline: "Own a significant product scope end to end — from strategy to results",
+      analogy: {
+        before: "Trước (2.1): Bạn là cán bộ tín dụng — xử lý từng hồ sơ vay theo quy trình, follow deadline giải ngân, báo cáo số liệu lên cấp trên. Mọi quyết định sản phẩm lớn đều do LM define, bạn chủ yếu thực thi.",
+        after:  "Sau (2.2): Bạn là Trưởng phòng Tín dụng — bạn chịu trách nhiệm toàn bộ P&L của CashLoan, tự define chiến lược acquisition và retention, phân bổ resource vào từng lending flow, và nắm rõ mọi workstream đang chạy đến đâu, vướng ở đâu. LM chỉ cần hỏi là bạn có ngay câu trả lời — không cần đợi tổng hợp.",
+        mapping: "Phòng Tín dụng = CashLoan platform. Bạn = Trưởng phòng. Dedicated resources = chuyên viên phụ trách từng flow (Onboarding, Disbursement, Collection…). Mỗi lending partner / segment (ngân hàng đối tác, phân khúc KH) = một product line. LM = Giám đốc — vẫn set direction chung nhưng không cần lo vận hành hàng ngày nữa.",
       },
-      {
-        icon: "👥",
-        title: "Dedicated Resource Allocation",
-        desc: "Xác định rõ Hào và các resource khác sẽ take in charge scope nào trong BNPL. Bạn không cần làm tất cả — nhưng bạn phải biết ai đang làm gì, và khi nào cần escalate / re-allocate.",
-      },
-      {
-        icon: "📊",
-        title: "Workstream Progress Visibility",
-        desc: "Nắm được execution detail của tất cả workstream BNPL: problem đang gặp là gì, solution đã define chưa, blocker ở đâu, ETA có realistic không. Không đợi sếp hỏi — bạn chủ động có cái nhìn này mọi lúc.",
-      },
-    ],
+      outputs: [
+        {
+          icon: "🗺️",
+          title: "CashLoan Product Architecture Overview",
+          desc: "Nắm và maintain được toàn bộ product architecture của CashLoan: Partner layer (các ngân hàng / tổ chức tín dụng đối tác), Flow layer (Application → Credit Scoring → Approval → Disbursement → Repayment → Collection → Account Mgmt), Functional layer (Risk & Compliance, Operation, Reconciliation). Không cần LM explain — bạn là người giải thích cho người khác.",
+        },
+        {
+          icon: "👥",
+          title: "Dedicated Resource Allocation",
+          desc: "Xác định rõ từng resource sẽ take in charge scope nào trong CashLoan. Bạn không cần làm tất cả — nhưng phải biết ai đang phụ trách flow nào, capacity còn lại bao nhiêu, và khi nào cần escalate / re-allocate để đảm bảo tiến độ.",
+        },
+        {
+          icon: "📊",
+          title: "Workstream Progress Visibility",
+          desc: "Nắm được execution detail của tất cả workstream CashLoan: problem đang gặp là gì, solution đã define chưa, blocker ở đâu (risk policy, tech, ops), ETA có realistic không. Không đợi sếp hỏi — bạn chủ động có cái nhìn này mọi lúc.",
+        },
+      ],
+    },
   },
 };
 
@@ -241,18 +276,25 @@ const MATURITY_DESC = {
 };
 
 // ─── STORAGE ──────────────────────────────────────────────────────────────────
-const SK = "zpo_promo_v3_local";
+const SK = "zpo_promo_v4_local";
 const defaultState = () => ({
   members:[
-    {id:1,name:"",level:"2.1"},
-    {id:2,name:"",level:"2.1"},
-    {id:3,name:"",level:"1.3"},
+    {id:1,name:"",level:"2.1",product:"bnpl"},
+    {id:2,name:"",level:"2.1",product:"bnpl"},
+    {id:3,name:"",level:"1.3",product:"bnpl"},
   ],
   conditions:{},
   skills:{},
 });
 function loadState(){
-  try{const r=localStorage.getItem(SK);if(r)return JSON.parse(r);}catch{}
+  try{
+    const r=localStorage.getItem(SK);
+    if(r){
+      const s=JSON.parse(r);
+      s.members=s.members.map(m=>({product:"bnpl",...m}));
+      return s;
+    }
+  }catch{}
   return defaultState();
 }
 
@@ -274,7 +316,7 @@ function generateHTML(member, conditions, skills) {
   const dName = memberDisplayName(member);
   const date = new Date().toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"});
 
-  const eyeData = EYE_LEVEL_SUMMARY[nl];
+  const eyeData = EYE_LEVEL_SUMMARY[member.product]?.[nl];
   const eyeLevelSection = eyeData ? `
   <div class="card">
     <h2>⓪ Eye-Level Summary — What does ${nl} look like?</h2>
@@ -671,9 +713,9 @@ function CompGroup({group,skills,currentLevel,skillsState,onSkillChange}){
 }
 
 // ─── EYE-LEVEL SUMMARY SECTION ───────────────────────────────────────────────
-function EyeLevelSummarySection({level}){
+function EyeLevelSummarySection({level, product}){
   const nl=NEXT_LEVEL[level];
-  const data=EYE_LEVEL_SUMMARY[nl];
+  const data=EYE_LEVEL_SUMMARY[product]?.[nl];
   if(!data) return(
     <div style={{padding:"16px",background:"#F9FAFB",border:"1.5px solid #E5E7EB",borderRadius:10,color:"#9CA3AF",fontSize:13,textAlign:"center"}}>
       No eye-level summary defined for this target level.
@@ -768,6 +810,16 @@ function MemberTab({member,onMemberChange,condState,onCondChange,skillsState,onS
               </div>
             )}
             {nl&&<p style={{fontSize:10,color:"#94A3B8",marginTop:4,marginBottom:0,lineHeight:1.4}}><em>{LEVELS[nl]?.eyeLevel}</em></p>}
+            <div style={{display:"flex",alignItems:"center",gap:6,marginTop:8,flexWrap:"wrap"}}>
+              <span style={{fontSize:11,color:"#94A3B8",flexShrink:0}}>Product:</span>
+              {Object.entries(PRODUCTS).map(([k,p])=>(
+                <button
+                  key={k}
+                  onClick={()=>onMemberChange({...member,product:k})}
+                  style={{padding:"3px 10px",borderRadius:20,fontSize:11,fontWeight:700,cursor:"pointer",border:`1.5px solid ${p.color}`,background:member.product===k?p.color:"transparent",color:member.product===k?"white":p.color,transition:"all 0.15s"}}
+                >{p.label}</button>
+              ))}
+            </div>
           </div>
           <div className="gate-status">
             <div style={{fontSize:10,color:"#64748B",textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>Mandatory Gates</div>
@@ -789,7 +841,7 @@ function MemberTab({member,onMemberChange,condState,onCondChange,skillsState,onS
       {sec==="eyelevel"&&(
         <div>
           <p style={{fontSize:12,color:"#6B7280",marginBottom:12}}>Tổng quan về kỳ vọng ở level tiếp theo — đây là "bức tranh lớn" trước khi đi vào từng điều kiện cụ thể.</p>
-          <EyeLevelSummarySection level={member.level}/>
+          <EyeLevelSummarySection level={member.level} product={member.product}/>
         </div>
       )}
 
