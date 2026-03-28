@@ -824,8 +824,8 @@ function MemberTab({member,onMemberChange,condState,onCondChange,skillsState,onS
           </div>
           <div className="gate-status">
             <div style={{fontSize:10,color:"#64748B",textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>Mandatory Gates</div>
-            <div style={{fontSize:11,fontWeight:600,color:qaA==="met"?"#4ADE80":qaA==="not_met"?"#FCA5A5":"#FCA5A5"}}>{qaA==="met"?"✅":qaA==="not_met"?"❌":"🔴"} Quality Assurance</div>
-            <div style={{fontSize:11,fontWeight:600,color:smA==="met"?"#4ADE80":smA==="not_met"?"#FCA5A5":"#FCA5A5",marginTop:2}}>{smA==="met"?"✅":smA==="not_met"?"❌":"🔴"} Stakeholder Mgmt</div>
+            <div style={{fontSize:11,fontWeight:600,color:qaA==="met"?"#4ADE80":qaA==="not_met"?"#FCA5A5":"#94A3B8"}}>{qaA==="met"?"✅":qaA==="not_met"?"❌":"⬜"} Quality Assurance</div>
+            <div style={{fontSize:11,fontWeight:600,color:smA==="met"?"#4ADE80":smA==="not_met"?"#FCA5A5":"#94A3B8",marginTop:2}}>{smA==="met"?"✅":smA==="not_met"?"❌":"⬜"} Stakeholder Mgmt</div>
             <button onClick={onExportHTML} className="export-btn">⬇ Export HTML</button>
           </div>
         </div>
