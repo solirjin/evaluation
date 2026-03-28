@@ -1043,10 +1043,6 @@ function App(){
   // Firebase auth listener
   useEffect(()=>{
     if(!fbAuth) return;
-    // Handle redirect sign-in result (mobile flow)
-    fbAuth.getRedirectResult().then(result=>{
-      if(result&&result.user) setUser(result.user);
-    }).catch(()=>{});
     return fbAuth.onAuthStateChanged(u=>{
       setUser(u);
       if(u){
@@ -1083,11 +1079,7 @@ function App(){
 
   const signIn=()=>{
     if(!fbAuth) return;
-    const provider=new firebase.auth.GoogleAuthProvider();
-    // Use redirect on mobile (popup is often blocked); popup on desktop
-    const isMobile=/android|iphone|ipad|ipod/i.test(navigator.userAgent);
-    if(isMobile){ fbAuth.signInWithRedirect(provider); }
-    else { fbAuth.signInWithPopup(provider).catch(()=>fbAuth.signInWithRedirect(provider)); }
+    fbAuth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(()=>{});
   };
   const signOut=()=>fbAuth&&fbAuth.signOut().then(()=>setSt(loadState()));
 
