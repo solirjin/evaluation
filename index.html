@@ -1033,7 +1033,7 @@ function MemberTab({member,onMemberChange,condState,onCondChange,skillsState,onS
 function App(){
   const [st,setSt]=useState(()=>loadState());
   const [tab,setTab]=useState(st.members[0].id);
-  const [flash,setFlash]=useState(false);
+  const [saveStatus,setSaveStatus]=useState("idle"); // idle | saving | saved | error
   const [htmlModal,setHtmlModal]=useState({open:false,code:"",name:""});
   const [copied,setCopied]=useState(false);
   const [user,setUser]=useState(null);
@@ -1066,15 +1066,23 @@ function App(){
   },[]);
 
   // Save to localStorage always; save to Firestore (debounced) when signed in
+  const idleTimer=useRef(null);
   useEffect(()=>{
     try{localStorage.setItem(SK,JSON.stringify(st));}catch{}
-    setFlash(true);
-    const t=setTimeout(()=>setFlash(false),1200);
+    clearTimeout(idleTimer.current);
     if(user&&fbDb){
+      setSaveStatus("saving");
       clearTimeout(saveTimer.current);
-      saveTimer.current=setTimeout(()=>{ fbDb.collection("evaluations").doc(user.uid).set(st); },1500);
+      saveTimer.current=setTimeout(()=>{
+        fbDb.collection("evaluations").doc(user.uid).set(st)
+          .then(()=>{ setSaveStatus("saved"); idleTimer.current=setTimeout(()=>setSaveStatus("idle"),2000); })
+          .catch(()=>{ setSaveStatus("error"); idleTimer.current=setTimeout(()=>setSaveStatus("idle"),3000); });
+      },1500);
+    } else {
+      setSaveStatus("saved");
+      idleTimer.current=setTimeout(()=>setSaveStatus("idle"),1200);
     }
-    return()=>clearTimeout(t);
+    return()=>{ clearTimeout(idleTimer.current); };
   },[st,user]);
 
   const signIn=()=>{
@@ -1172,8 +1180,19 @@ function App(){
             <p className="app-subtitle">Product Management Track · Manager's Review Workspace</p>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
-            <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:user?(flash?"#15803D":"#16A34A"):(flash?"#16A34A":"#9CA3AF"),background:user?(flash?"#DCFCE7":"#F0FDF4"):(flash?"#F0FDF4":"#F8FAFC"),border:`1px solid ${user?(flash?"#86EFAC":"#BBF7D0"):(flash?"#BBF7D0":"#E5E7EB")}`,padding:"4px 10px",borderRadius:20,transition:"all 0.3s"}}>
-              <span>{user?"●":(flash?"●":"○")}</span>{flash?(user?"Saved to cloud":"Saved"):(user?"Cloud sync on":"Auto-save on")}
+            {(()=>{
+              const cfg={
+                idle:  user?{c:"#16A34A",bg:"#F0FDF4",b:"#BBF7D0",dot:"●",label:"Cloud sync on"}
+                           :{c:"#9CA3AF",bg:"#F8FAFC",b:"#E5E7EB",dot:"○",label:"Auto-save on"},
+                saving:{c:"#D97706",bg:"#FFFBEB",b:"#FDE68A",dot:"◌",label:"Saving…"},
+                saved: user?{c:"#15803D",bg:"#DCFCE7",b:"#86EFAC",dot:"●",label:"Saved to cloud"}
+                           :{c:"#16A34A",bg:"#F0FDF4",b:"#BBF7D0",dot:"●",label:"Saved locally"},
+                error: {c:"#DC2626",bg:"#FEF2F2",b:"#FECACA",dot:"✕",label:"Save failed"},
+              }[saveStatus]||{c:"#9CA3AF",bg:"#F8FAFC",b:"#E5E7EB",dot:"○",label:"Auto-save on"};
+              return(
+              <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:cfg.c,background:cfg.bg,border:`1px solid ${cfg.b}`,padding:"4px 10px",borderRadius:20,transition:"all 0.3s"}}>
+                <span>{cfg.dot}</span>{cfg.label}</div>);
+            })()}
             </div>
             {fbAuth&&(
               <button
