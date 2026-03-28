@@ -1070,7 +1070,7 @@ function App(){
   useEffect(()=>{
     try{localStorage.setItem(SK,JSON.stringify(st));}catch{}
     clearTimeout(idleTimer.current);
-    if(user&&fbDb){
+    if(user&&fbDb&&cloudReady){
       setSaveStatus("saving");
       clearTimeout(saveTimer.current);
       saveTimer.current=setTimeout(()=>{
@@ -1083,7 +1083,7 @@ function App(){
       idleTimer.current=setTimeout(()=>setSaveStatus("idle"),1200);
     }
     return()=>{ clearTimeout(idleTimer.current); };
-  },[st,user]);
+  },[st,user,cloudReady]);
 
   const signIn=()=>{
     if(!fbAuth) return;
