@@ -306,6 +306,9 @@ const aColor=(a)=>({met:"#16A34A",promise:"#D97706",not_met:"#DC2626"}[a]||"#9CA
 const MBadge=({l})=>l&&l!=="-"
   ?<span style={{display:"inline-block",padding:"2px 10px",borderRadius:20,fontSize:11,fontWeight:700,color:mColor(l),background:mBg(l),border:`1.5px solid ${mColor(l)}30`}}>{l}</span>
   :<span style={{color:"#9CA3AF",fontSize:12}}>—</span>;
+const MDot=({l})=>l&&l!=="-"
+  ?<span title={l} style={{display:"inline-block",width:11,height:11,borderRadius:"50%",background:mColor(l),flexShrink:0,border:`2px solid ${mColor(l)}44`}}/>
+  :<span style={{display:"inline-block",width:11,height:11,borderRadius:"50%",background:"#E5E7EB",flexShrink:0}}/>;
 const memberDisplayName=(m)=>m.name.trim()||`Member ${m.id}`;
 
 // ─── HTML EXPORT ──────────────────────────────────────────────────────────────
@@ -635,7 +638,7 @@ function SkillRow({skill,currentLevel,skillState={},onSkillChange}){
           {isMand&&<span style={{fontSize:10,color:"#EF4444",fontWeight:700,background:"#FEF2F2",border:"1px solid #FECACA",padding:"1px 6px",borderRadius:10,flexShrink:0}}>MANDATORY</span>}
         </div>
         <div className="skill-badges">
-          <MBadge l={cm}/><span style={{color:"#9CA3AF",fontSize:12}}>→</span><MBadge l={nm}/>
+          <MDot l={cm}/><span style={{color:"#9CA3AF",fontSize:11}}>→</span><MDot l={nm}/>
           {assessment&&<span style={{fontSize:11,fontWeight:700,color:aColor(assessment),whiteSpace:"nowrap"}}>{aLabel(assessment)}</span>}
           <span style={{color:"#9CA3AF",fontSize:14,marginLeft:2}}>{exp?"▲":"▼"}</span>
         </div>
@@ -1008,8 +1011,8 @@ function App(){
         .skill-row-head{display:flex;align-items:flex-start;justify-content:space-between;padding:10px 12px;cursor:pointer;gap:8px}
         .skill-badges{display:flex;align-items:center;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;padding-top:1px}
 
-        /* Legend */
-        .legend{margin-top:14px;display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+        /* Bottom padding so content clears sticky legend */
+        .app-wrap{padding-bottom:48px!important}
 
         /* Rich editor content */
         [contenteditable] ul,[contenteditable] ol{margin:4px 0 4px 18px;padding:0}
@@ -1060,15 +1063,16 @@ function App(){
           )}
         </div>
 
-        {/* Maturity legend */}
-        <div className="legend">
-          {["Beginner","Intermediate","Proficient","Expert","Master"].map(m=>(
-            <div key={m} style={{display:"flex",alignItems:"center",gap:5}}>
-              <div style={{width:10,height:10,borderRadius:"50%",background:mColor(m),flexShrink:0}}/>
-              <span style={{fontSize:11,color:"#6B7280"}}>{m}</span>
-            </div>
-          ))}
-        </div>
+      </div>
+
+      {/* Sticky maturity legend */}
+      <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:500,background:"rgba(241,245,249,0.96)",backdropFilter:"blur(8px)",WebkitBackdropFilter:"blur(8px)",borderTop:"1px solid #E2E8F0",padding:"5px 16px",paddingBottom:"calc(5px + env(safe-area-inset-bottom))",display:"flex",gap:14,flexWrap:"wrap",justifyContent:"center",alignItems:"center"}}>
+        {["Beginner","Intermediate","Proficient","Expert","Master"].map(m=>(
+          <div key={m} style={{display:"flex",alignItems:"center",gap:4}}>
+            <div style={{width:9,height:9,borderRadius:"50%",background:mColor(m),flexShrink:0}}/>
+            <span style={{fontSize:10,color:"#6B7280",whiteSpace:"nowrap"}}>{m}</span>
+          </div>
+        ))}
       </div>
 
       {/* HTML Export Modal */}
