@@ -1044,7 +1044,9 @@ function App(){
   useEffect(()=>{
     if(!fbAuth) return;
     // Handle redirect sign-in result (mobile flow)
-    fbAuth.getRedirectResult().catch(()=>{});
+    fbAuth.getRedirectResult().then(result=>{
+      if(result&&result.user) setUser(result.user);
+    }).catch(()=>{});
     return fbAuth.onAuthStateChanged(u=>{
       setUser(u);
       if(u){
