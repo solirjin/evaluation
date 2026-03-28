@@ -6,10 +6,10 @@
 <meta name="theme-color" content="#0F172A">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="ZPO Promo">
+<meta name="apple-mobile-web-app-title" content="Promo Tool">
 <link rel="manifest" href="./manifest.json">
 <link rel="apple-touch-icon" href="./icons/icon-192.png">
-<title>ZPO Promotion Evaluation Tool</title>
+<title>Promotion Evaluation Tool</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #F1F5F9; }
@@ -37,7 +37,7 @@
 <div id="offline-badge">⚡ Offline</div>
 <div id="install-banner">
   <div class="ib-icon">📋</div>
-  <div class="ib-text"><div class="ib-title">Install ZPO Promo</div><div class="ib-sub">Add to home screen — works offline</div></div>
+  <div class="ib-text"><div class="ib-title">Install Promotion Tool</div><div class="ib-sub">Add to home screen — works offline</div></div>
   <button class="ib-btn" id="install-btn">Install</button>
   <button class="ib-dismiss" id="dismiss-btn">✕</button>
 </div>
@@ -73,7 +73,7 @@ const LEVELS = {
   "2.3":    { title: "Staff Product Owner",               track:"IC", eyeLevel: "Master of a major product scope; driving both product & growth / scaling strategy; focus on OKRs achievement" },
   "2.3pm":  { title: "Associate Product Manager",         track:"PM", eyeLevel: "Lead multiple product areas, each with its own PO, driving product strategy & business OKRs achievement" },
   "3.1":    { title: "Product Expert",                    track:"IC", eyeLevel: "A recognized product expert in their product area: driving innovative & differentiating product strategy that yields results" },
-  "3.1pm":  { title: "Product Manager",                   track:"PM", eyeLevel: "Lead a major product group within ZaloPay, track record of growing people" },
+  "3.1pm":  { title: "Product Manager",                   track:"PM", eyeLevel: "Lead a major product group within the company, track record of growing people" },
   "3.2":    { title: "Principal Product Expert",          track:"IC", eyeLevel: "Top product person in regional scale — recognized for achievement in Active Users, Usability or Revenue" },
   "3.2pm":  { title: "Senior Product Manager",            track:"PM", eyeLevel: "A visible leader, influencing business and company's direction, authoring new product direction" },
   "3.3":    { title: "Group Product Manager",             track:"PM", eyeLevel: "Influential product & company leader; shaping company's strategy; consistently making major product bets that yield positive results" },
@@ -113,9 +113,9 @@ const EYE_LEVEL_SUMMARY = {
     "2.2": {
       headline: "Own a significant product scope end to end — from strategy to results",
       analogy: {
-        before: "Trước (2.1): Bạn là nhân viên quản lý một chi nhánh nhỏ — lo vận hành hàng ngày, báo cáo lên cấp trên, xử lý vấn đề khi được giao. Mọi quyết định lớn đều cần LM duyệt, chiến lược do LM define.",
-        after:  "Sau (2.2): Bạn là Giám đốc Chi nhánh — bạn chịu trách nhiệm toàn bộ P&L của chi nhánh, tự define chiến lược, phân bổ nhân sự vào từng mảng, và biết rõ từng bộ phận đang làm gì, stuck ở đâu. Cấp trên chỉ cần hỏi là bạn có ngay câu trả lời — không cần đợi tổng hợp.",
-        mapping: "Chi nhánh = BNPL platform. Bạn = Branch Director. Hào và dedicated resources = trưởng các phòng ban (Onboarding Dept, Payment Dept…). Mỗi partner/flow (CIMB, VP, Mini…) = một product line riêng trong chi nhánh. LM = HQ — vẫn set direction chung, nhưng không cần lo vận hành hàng ngày nữa.",
+        before: "Trước (2.1): Bạn thực thi theo scope được giao — lo delivery từng feature, follow deadline, báo cáo tiến độ lên cấp trên. Quyết định lớn cần LM duyệt, chiến lược do LM define.",
+        after:  "Sau (2.2): Bạn own toàn bộ BNPL scope — tự define chiến lược, phân bổ resource vào từng workstream, nắm rõ từng flow đang ở đâu, stuck ở đâu. LM chỉ cần hỏi là bạn có ngay câu trả lời, không cần đợi tổng hợp.",
+        mapping: "Scope của bạn = toàn bộ BNPL platform. Resource = các PO / dedicated members phụ trách từng flow. Partner layer (CIMB, VP, Mini…) = từng product line. LM = vẫn set direction chung, không can thiệp vận hành hàng ngày.",
       },
       outputs: [
         {
@@ -140,9 +140,9 @@ const EYE_LEVEL_SUMMARY = {
     "2.2": {
       headline: "Own a significant product scope end to end — from strategy to results",
       analogy: {
-        before: "Trước (2.1): Bạn là cán bộ tín dụng — xử lý từng hồ sơ vay theo quy trình, follow deadline giải ngân, báo cáo số liệu lên cấp trên. Mọi quyết định sản phẩm lớn đều do LM define, bạn chủ yếu thực thi.",
-        after:  "Sau (2.2): Bạn là Trưởng phòng Tín dụng — bạn chịu trách nhiệm toàn bộ P&L của CashLoan, tự define chiến lược acquisition và retention, phân bổ resource vào từng lending flow, và nắm rõ mọi workstream đang chạy đến đâu, vướng ở đâu. LM chỉ cần hỏi là bạn có ngay câu trả lời — không cần đợi tổng hợp.",
-        mapping: "Phòng Tín dụng = CashLoan platform. Bạn = Trưởng phòng. Dedicated resources = chuyên viên phụ trách từng flow (Onboarding, Disbursement, Collection…). Mỗi lending partner / segment (ngân hàng đối tác, phân khúc KH) = một product line. LM = Giám đốc — vẫn set direction chung nhưng không cần lo vận hành hàng ngày nữa.",
+        before: "Trước (2.1): Bạn thực thi theo scope được giao — xử lý từng flow theo quy trình, follow deadline giải ngân, báo cáo số liệu lên cấp trên. Quyết định sản phẩm lớn do LM define.",
+        after:  "Sau (2.2): Bạn own toàn bộ CashLoan scope — tự define chiến lược acquisition và retention, phân bổ resource vào từng lending flow, nắm rõ mọi workstream đang chạy đến đâu, vướng ở đâu. LM chỉ cần hỏi là bạn có ngay câu trả lời, không cần đợi tổng hợp.",
+        mapping: "Scope của bạn = toàn bộ CashLoan platform. Resource = các PO / dedicated members phụ trách từng flow. Lending partner / segment = từng product line. LM = vẫn set direction chung, không can thiệp vận hành hàng ngày.",
       },
       outputs: [
         {
@@ -186,15 +186,15 @@ const MATURITY_DESC = {
     Beginner:"Able to write a clear specification for a small feature and contribute meaningfully to specifications for major features.\n\nWork effectively with biz, tech & other stakeholders to gather all information needed.\n\nSpecs describe functionality in sufficient detail for stakeholders to understand and for engineers to build.",
     Intermediate:"Able to write a clear specification for major features.\n\nAble to effectively think through and specify complex functionality within a product.\n\nHave a strong understanding of the logic/technical flow of your product line.\n\nAble to discuss and defend ideas when talking with tech team members.",
     Proficient:"Able to write clear specification for a complete product.\n\nOn cross-functional projects, able to work closely with other POs and SA to form a view on product architecture.\n\nEffectively sequencing product inits and prioritizing most valuable features to test riskiest assumptions.\n\nCan estimate level of effort required for a feature and take that into account when drafting requirements.",
-    Expert:"Able to write specification for a major product/platform.\n\nCan review specs created by your team/other teams and give effective feedback at the appropriate level of detail.\n\nAble to navigate the complexity of ZaloPay legacy tech system and make appropriate trade offs given business requirements.",
-    Master:"Author an architecture transformation for ZaloPay.\n\nDeep understanding of major ZaloPay systems and how they are connected to make effective, risk-free adjustments when required.\n\nAble to think 3-step ahead and point out exactly the risks / guide Tech members to explore the risks in all ZaloPay systems when making changes.",
+    Expert:"Able to write specification for a major product/platform.\n\nCan review specs created by your team/other teams and give effective feedback at the appropriate level of detail.\n\nAble to navigate the complexity of the company legacy tech system and make appropriate trade offs given business requirements.",
+    Master:"Author an architecture transformation for the company.\n\nDeep understanding of major the company systems and how they are connected to make effective, risk-free adjustments when required.\n\nAble to think 3-step ahead and point out exactly the risks / guide Tech members to explore the risks in all the company systems when making changes.",
   },
   "Delivery & Collaboration":{
     Beginner:"Able to develop effective working relationships with your immediate team at squad members level.\n\nCan effectively articulate the goals and business justification for your current project.\n\nWork with your manager to make the right implementation trade-off decisions in getting your project built and launched on schedule.",
     Intermediate:"Able to develop effective working relationships with your squad lead, make him/her an ally.\n\nEffective at negotiating the implementation of your project, and making the right trade-off decisions in order to launch in a high-quality manner.\n\nKnow when to escalate to your manager if project falls behind deadline.\n\nAble to quickly solve small implementation roadblocks independently.\n\nAble to lead effective scrum team meetings.",
     Proficient:"Able to command respect from squad leadership, build a trusted working relationship with squad.\n\nAble to challenge and push the Tech team members to focus on delivering key business goals.\n\nFind right creative solutions that strike the right balance between speed and quality.\n\nAnticipate and resolve implementation risks effectively & independently.\n\nAble to give feedback and drive necessary behavioral changes in squad members (if necessary).",
     Expert:"Able to form relationship and command respect from tech leaders; able to influence tech leaders.\n\nAble to match resources available and planned roadmap to effectively request for help to deliver against aggressive timelines.\n\nKnow how to motivate & inspire your team to push through challenges.\n\nCan make tough trade-off decisions that result in both a successful initial launch and quick, data-driven iteration.",
-    Master:"You are known in ZaloPay to make the 'impossible' possible in terms of launching new products to market.\n\nYou can constantly drive project against very aggressive timeline, without burning the team out.\n\nYour squad trusts you to make tough trade-off decisions when complication arises and priority changes.",
+    Master:"You are known in the company to make the 'impossible' possible in terms of launching new products to market.\n\nYou can constantly drive project against very aggressive timeline, without burning the team out.\n\nYour squad trusts you to make tough trade-off decisions when complication arises and priority changes.",
   },
   "Quality Assurance":{
     Beginner:"Able to work with QC to ensure a high-quality launch.\n\nCan prioritize the severity of bugs and make recommendations whether to launch that feature.",
@@ -204,52 +204,52 @@ const MATURITY_DESC = {
     Master:"You create a quality-first culture to ensure that your team consistently delivers high quality products.",
   },
   "Fluency with Data":{
-    Beginner:"Able to read and understand insights from pre-built dashboard metrics.\n\nBasic understanding of analytics best practices, know how to write SQL and use basic data tools (Superset)/ZDS built tools.\n\nCan write effective requests to ZDS to gather insights and build new dashboards.",
-    Intermediate:"Able to effectively define proper event tracking for a project with support from ZDS.\n\nUses dashboards effectively to track progress of team objectives/goals.\n\nHave a strong grasp of Superset and can self-serve some of the adhoc queries.",
-    Proficient:"Able to independently define event tracking and support ZDS navigating data schema to build new charts/dashboards.\n\nEffectively define tracking framework on both Front end (event tracking) and Back end (interaction tracking).\n\nWork efficiently with ZDS/BI team to perform analyses around key metrics.\n\nAble to use Jupyter/PySpark to perform more complex queries.",
-    Expert:"Can easily diagnose issues and opportunities with dashboards & track progress/objectives of product lines.\n\nLeverage data to inform your product roadmap and key product decisions in presentations to stakeholders.\n\nCan perform majority of product queries in Jupyter PySpark in absence of ZDS' support.\n\nMentor new team members in data query skills.",
-    Master:"Go-to expert when teams need to consult on metrics to track / data to consume of different product lines at ZaloPay.\n\nSkill-wise, you can effectively substitute part of ZDS/BI team.\n\nHelp your team to build up their data fluency, making them more effective decision makers and efficient communicators.",
+    Beginner:"Able to read and understand insights from pre-built dashboard metrics.\n\nBasic understanding of analytics best practices, know how to write SQL and use basic data tools (Superset)/Data team built tools.\n\nCan write effective requests to Data team to gather insights and build new dashboards.",
+    Intermediate:"Able to effectively define proper event tracking for a project with support from Data team.\n\nUses dashboards effectively to track progress of team objectives/goals.\n\nHave a strong grasp of Superset and can self-serve some of the adhoc queries.",
+    Proficient:"Able to independently define event tracking and support Data team navigating data schema to build new charts/dashboards.\n\nEffectively define tracking framework on both Front end (event tracking) and Back end (interaction tracking).\n\nWork efficiently with Data team/BI team to perform analyses around key metrics.\n\nAble to use Jupyter/PySpark to perform more complex queries.",
+    Expert:"Can easily diagnose issues and opportunities with dashboards & track progress/objectives of product lines.\n\nLeverage data to inform your product roadmap and key product decisions in presentations to stakeholders.\n\nCan perform majority of product queries in Jupyter PySpark in absence of Data team' support.\n\nMentor new team members in data query skills.",
+    Master:"Go-to expert when teams need to consult on metrics to track / data to consume of different product lines at the company.\n\nSkill-wise, you can effectively substitute part of Data team/BI team.\n\nHelp your team to build up their data fluency, making them more effective decision makers and efficient communicators.",
   },
   "Analytical Mindset":{
     Beginner:"Able to appropriately react when spotting changes from dashboard charts.\n\nNeed some assistance to perform experiments and deep dive analyses.",
     Intermediate:"Understand different testing methods; apply AB tests in product development process.\n\nCan analyze the results post-launch/AB tests and work with your manager to make recommendations on the right next steps for the feature.\n\nUse insights from self-serve/ad-hoc queries to drive product recommendations and set realistic goals for upcoming projects.",
     Proficient:"Argue with numbers: effectively use charts, lite excel models with clear assumptions.\n\nAble to come up with set of useful, relevant metrics for your product based on business questions, product type, user behavior.\n\nPartner with analysts on deep dive analyses as well as lead deep dive analyses on their own.\n\nConsistently make data-driven product improvements that yield proven business results.",
     Expert:"Translate business/real life questions or hypotheses to smaller problems that data can answer.\n\nBe comfortable with data ambiguity and able to come up with critical insights from seemingly normal datasets.\n\nConsistently look to challenge self-assumptions with data.\n\nForm coherent stories of your product with key metrics/charts.",
-    Master:"Guide team to perform complex analyses & help them structure their presentation to uncover non-intuitive insights.\n\nEasily break down big product/business problems into smaller questions & use approximation to come up with answers at speed.\n\nSet example for data-driven culture at ZaloPay.",
+    Master:"Guide team to perform complex analyses & help them structure their presentation to uncover non-intuitive insights.\n\nEasily break down big product/business problems into smaller questions & use approximation to come up with answers at speed.\n\nSet example for data-driven culture at the company.",
   },
   "User Empathy":{
     Beginner:"Understand who your users are (esp. important for non-end-user facing product lines e.g. merchants, internal tools).\n\nWork with manager to identify when to gather feedback from users.\n\nUnderstand the benefits and tradeoffs of using various user feedback channels.",
     Intermediate:"Able to articulate user problems and prioritize product/features based on severity & urgency.\n\nIndependently assess when it is critical to gather user input to make decision.\n\nWork closely with UXR team to determine which method of user feedbacks is most effective for the task at hand.",
     Proficient:"Able to segment target user groups (personas) and link that with product design decisions.\n\nEstablish constant channels of feedback (CS/Social media/app store review/occasional user check-ins) to gather user feedback.\n\nCan effectively balance feedback from users with the business needs of the company, and make the right trade-off decisions.",
     Expert:"Command in-depth understanding of your user's mental models and small nuances among different personas.\n\nCan provide advice and guidance to UXR team on the appropriate research approach.\n\nCan lead user interviews/usability test/focus group discussions with right methodology.",
-    Master:"Uncover unmet needs & non-common-sense, non-intuitive insights in behaviors of different user segments, gained through hundreds of hours of speaking to customers, observations, and researches.\n\nSet example for customer obsession culture at ZaloPay.\n\nLeverage user research results to inform product strategy and discover new product opportunities.",
+    Master:"Uncover unmet needs & non-common-sense, non-intuitive insights in behaviors of different user segments, gained through hundreds of hours of speaking to customers, observations, and researches.\n\nSet example for customer obsession culture at the company.\n\nLeverage user research results to inform product strategy and discover new product opportunities.",
   },
   "User Experience Design":{
     Beginner:"Need some form of assistance in working with Design team throughout the product development cycle.\n\nAble to assess the quality of an existing user experience and make concrete recommendations for how to improve.\n\nAble to quickly develop low-fi wireframe for your feature/product in Figma.",
-    Intermediate:"Properly brief the context and constraint of the product/project in collaboration with Design team and manage timeline effectively.\n\nWork with the design team to create a UI that is high-quality, meets the project's business requirements, and abides by the design system of ZaloPay.\n\nCan produce hi-fi wireframe in Figma with assistance from Design team.",
+    Intermediate:"Properly brief the context and constraint of the product/project in collaboration with Design team and manage timeline effectively.\n\nWork with the design team to create a UI that is high-quality, meets the project's business requirements, and abides by the design system of the company.\n\nCan produce hi-fi wireframe in Figma with assistance from Design team.",
     Proficient:"Engage Design team as true thought partners in solving user problems.\n\nProvide help/guidance to the design team in terms of product visual direction.\n\nCan critically assess the Design's work, and give clear and constructive feedback to help improve its usability & balance business needs.\n\nIndependently produce hi-fi wireframe in Figma leveraging Design systems.",
     Expert:"Known for raising the standards when working with Design team.\n\nUnderstand the value of consistent design across the company, and are an advocate for effectively using Design systems.\n\nAble to produce production-grade UI with minimal supervision/adjustment from UED team.",
     Master:"Respected by Design team for building aesthetic yet functional products.\n\nSource of knowledge on design and UX best practices and actively support other POs in improving their flows.\n\nAble to produce high-quality UI/prototype and can work independently as a product designer.",
   },
   "Ownership Mindset":{
-    Beginner:"Can articulate the goals of your current project/feature/product, follow through with analysis post-launch, and understand how those results tie to the goals of your team.\n\nUnderstand the overall direction of your product area and how the work you are doing connects to ZaloPay's overall strategy.",
-    Intermediate:"Work closely with business counterparts to sharpen the value of a BRD/request.\n\nAble to prioritize work plan based on size of business value & feasibility/efforts.\n\nConsistently drive to actionable next steps in analyses/communication.\n\nStrive to achieve 100% of your commitments and proactively communicate when commitments can't be achieved.\n\nDemonstrate how your product direction makes a meaningful contribution to your group/ZaloPay's strategy.",
+    Beginner:"Can articulate the goals of your current project/feature/product, follow through with analysis post-launch, and understand how those results tie to the goals of your team.\n\nUnderstand the overall direction of your product area and how the work you are doing connects to the company's overall strategy.",
+    Intermediate:"Work closely with business counterparts to sharpen the value of a BRD/request.\n\nAble to prioritize work plan based on size of business value & feasibility/efforts.\n\nConsistently drive to actionable next steps in analyses/communication.\n\nStrive to achieve 100% of your commitments and proactively communicate when commitments can't be achieved.\n\nDemonstrate how your product direction makes a meaningful contribution to your group/the company's strategy.",
     Proficient:"Able to challenge and negotiate with business counterparts based on the value of BRD/requests; can give effective inputs to biz plan.\n\nCan effectively take into account team strategy when making roadmap decisions, and communicate those strategic ties to more junior team members.\n\nEmbrace the 'can-do' attitude in your day-to-day product work.\n\nAccountable for project success, measured by outcome, not output.",
-    Expert:"Actively define the product plan based on understanding of business situation, industry dynamics and ZaloPay needs.\n\nExpand your influence to product groups beyond your immediate scope of work; able to advise & give feedback for POs from other teams.\n\nMake difficult trade offs/sacrifices to your own plan/roadmap if it is for the common success of ZaloPay.",
-    Master:"Owner of a product group / company-wide product strategy and drive progress towards that strategy.\n\nFoster culture focusing on outcomes, not output in your team and set example for ZaloPay as a team that consistently hits/exceeds business objectives.\n\nCan influence changes at the company level to maximize outcomes.",
+    Expert:"Actively define the product plan based on understanding of business situation, industry dynamics and the company needs.\n\nExpand your influence to product groups beyond your immediate scope of work; able to advise & give feedback for POs from other teams.\n\nMake difficult trade offs/sacrifices to your own plan/roadmap if it is for the common success of the company.",
+    Master:"Owner of a product group / company-wide product strategy and drive progress towards that strategy.\n\nFoster culture focusing on outcomes, not output in your team and set example for the company as a team that consistently hits/exceeds business objectives.\n\nCan influence changes at the company level to maximize outcomes.",
   },
   "Vision & Roadmapping":{
     Beginner:"Roadmap is handed/supported by your direct manager.\n\nClearly understand and can articulate how your current roadmap ties to your team's goals and those of your product group.\n\nComfortable escalating to/working with your manager when that connection isn't clear.",
-    Intermediate:"Able to meaningfully contribute to product roadmap planning with quarterly (2-3 month) view.\n\nMake proactive recommendations on how to better achieve your team/ZaloPay's goals through your forward-looking roadmap.\n\nDetailed, high fidelity roadmap of 2 sprints in advance.\n\nEnsure the immediate delivery team (Tech/QC) is on the same page in terms of planning.",
-    Proficient:"Responsible for crafting a 3-month product roadmap independently, taking input from various relevant stakeholders.\n\nUnderstand how to make trade-off decisions that maximize value for your product area/ZaloPay.\n\nDefine a product strategy & vision document for your product area.\n\nWork closely with business counterparts & other squads to ensure all release dates are hit.",
+    Intermediate:"Able to meaningfully contribute to product roadmap planning with quarterly (2-3 month) view.\n\nMake proactive recommendations on how to better achieve your team/the company's goals through your forward-looking roadmap.\n\nDetailed, high fidelity roadmap of 2 sprints in advance.\n\nEnsure the immediate delivery team (Tech/QC) is on the same page in terms of planning.",
+    Proficient:"Responsible for crafting a 3-month product roadmap independently, taking input from various relevant stakeholders.\n\nUnderstand how to make trade-off decisions that maximize value for your product area/the company.\n\nDefine a product strategy & vision document for your product area.\n\nWork closely with business counterparts & other squads to ensure all release dates are hit.",
     Expert:"Able to form a detailed, high fidelity 3-month roadmap for your product vertical/area with high accuracy.\n\nCome up with educated 6-month+ view on the product direction.\n\nActively identify novel areas for investment that further this product vision.",
-    Master:"Enable your team to define impactful 3-month+ roadmaps for their product areas, and synthesize those roadmaps into an overarching vision for ZaloPay.\n\nResponsible for clearly defining what your team should be focused on, the narrative of why the product initiative is important, and setting clear expectations for what outcomes will be delivered for the company.",
+    Master:"Enable your team to define impactful 3-month+ roadmaps for their product areas, and synthesize those roadmaps into an overarching vision for the company.\n\nResponsible for clearly defining what your team should be focused on, the narrative of why the product initiative is important, and setting clear expectations for what outcomes will be delivered for the company.",
   },
   "Product Innovation":{
     Beginner:"Compare and contrast the current product with competitors on the market to come up with small product differentiation.\n\nAlways look for alternative solutions/different approaches to the business/user problems at hand.",
     Intermediate:"Not only compare but also understand the rationale behind the competitors' product decisions to form an opinionated view on your product.\n\nMake decision to imitate or innovate based on nature of the product flow.\n\nBuild a knowledge base of best-in-class from regional/global companies.",
     Proficient:"Understand deeply the industry dynamics at play and other alternatives to solve the user problems.\n\nCome up with product direction driven by specific user problem and take into account competitors' strategy & positioning.\n\nProactively come up with differentiation in product positioning that matters.",
-    Expert:"Considered as an expert for that product area, based on the number of innovative ideas.\n\nLeave a distinctive creative/innovative mark on the entire product of ZaloPay.\n\nEffectively make the case for investments in strategic initiatives that had not previously been on the roadmap.",
+    Expert:"Considered as an expert for that product area, based on the number of innovative ideas.\n\nLeave a distinctive creative/innovative mark on the entire product of the company.\n\nEffectively make the case for investments in strategic initiatives that had not previously been on the roadmap.",
     Master:"Consistently place strategic product bets that turn into successes.\n\nPersuade leadership team and rally company around new product directions.\n\nAuthor articles/blogs on topic of product development.",
   },
   "Stakeholder Management":{
@@ -268,9 +268,9 @@ const MATURITY_DESC = {
   },
   "Leadership Presence":{
     Beginner:"Effectively unblock issues and support drive to solutions when there are cross functional conflicts.",
-    Intermediate:"Considered as a leader who challenges directly and cares personally by their cross-functional teams.\n\nEstablish presence in cross-functional meetings by offering thoughtful/insightful comments that drive to decisions for ZaloPay.\n\nInform the team full clarity on objectives, priorities and the why behind both.\n\nIdentify conflicts or roadblocks on area of responsibility; often able to resolve independently.",
+    Intermediate:"Considered as a leader who challenges directly and cares personally by their cross-functional teams.\n\nEstablish presence in cross-functional meetings by offering thoughtful/insightful comments that drive to decisions for the company.\n\nInform the team full clarity on objectives, priorities and the why behind both.\n\nIdentify conflicts or roadblocks on area of responsibility; often able to resolve independently.",
     Proficient:"Empower and inspires their team(s) and key individuals to deliver their best.\n\nExpert at facilitating meetings, leading discussions, and guiding the team towards well-defined goals.\n\nIdentify conflicts or roadblocks on area of responsibility quickly and make decisions with decisiveness.\n\nCreate an atmosphere of enthusiasm, fun, commitment and trust to maximize productivity.",
-    Expert:"Able to communicate and share product vision with clarity and persuasion.\n\nGreat at public speaking - engaging and enthusiastic; striking balance between depth of info and understandability.\n\nDeep knowledge of product area, can represent ZaloPay in meeting with C-suite from partner companies.",
+    Expert:"Able to communicate and share product vision with clarity and persuasion.\n\nGreat at public speaking - engaging and enthusiastic; striking balance between depth of info and understandability.\n\nDeep knowledge of product area, can represent the company in meeting with C-suite from partner companies.",
     Master:"Considered an excellent leader, inspiring people across the company.\n\nProactively support people across the organization to grow their leadership skills.\n\nA visible leader who excels in large scale meetings.",
   },
 };
@@ -325,7 +325,7 @@ function generateHTML(member, conditions, skills) {
       <div style="font-size:14px;font-weight:800;color:#F1F5F9">${eyeData.headline}</div>
     </div>
     <div style="background:#FFFBEB;border:1.5px solid #FDE68A;border-radius:10px;padding:14px 16px;margin-bottom:14px">
-      <div style="font-size:11px;font-weight:800;text-transform:uppercase;color:#92400E;margin-bottom:10px">🏢 Nhân viên Chi nhánh → Giám đốc Chi nhánh</div>
+      <div style="font-size:11px;font-weight:800;text-transform:uppercase;color:#92400E;margin-bottom:10px">🔄 Trước vs. Sau khi lên level</div>
       <p style="margin:0 0 8px;font-size:12px;color:#78350F"><strong>👷 Trước (2.1):</strong> ${eyeData.analogy.before}</p>
       <p style="margin:0 0 8px;font-size:12px;color:#064E3B"><strong>🏆 Sau (2.2):</strong> ${eyeData.analogy.after}</p>
       <div style="background:white;border:1px solid #FDE68A;border-radius:8px;padding:10px 12px;margin-top:6px;font-size:12px;color:#374151"><strong>🗂 Mapping:</strong> ${eyeData.analogy.mapping}</div>
@@ -465,7 +465,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDesc();});
   <div style="margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
     <div>
       <h1>🧑‍💼 Promotion Evaluation</h1>
-      <p style="margin:0;font-size:13px;color:#64748B">ZPO Product Management Track · Generated ${date}</p>
+      <p style="margin:0;font-size:13px;color:#64748B">Product Management Track · Generated ${date}</p>
     </div>
     <button onclick="window.print()" style="padding:8px 16px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;background:#0F172A;color:white;border:none">🖨️ Print / Save PDF</button>
   </div>
@@ -728,7 +728,7 @@ function EyeLevelSummarySection({level, product}){
         <div style={{fontSize:15,fontWeight:800,lineHeight:1.4,color:"#F1F5F9"}}>{data.headline}</div>
       </div>
       <div style={{background:"#FFFBEB",border:"1.5px solid #FDE68A",borderRadius:10,padding:"14px 16px"}}>
-        <div style={{fontSize:11,fontWeight:800,textTransform:"uppercase",letterSpacing:0.5,color:"#92400E",marginBottom:10}}>🏢 Nhân viên Chi nhánh → Giám đốc Chi nhánh</div>
+        <div style={{fontSize:11,fontWeight:800,textTransform:"uppercase",letterSpacing:0.5,color:"#92400E",marginBottom:10}}>🔄 Trước vs. Sau khi lên level</div>
         <div style={{display:"flex",flexDirection:"column",gap:8}}>
           <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
             <span style={{fontSize:18,flexShrink:0}}>👷</span>
@@ -795,6 +795,12 @@ function MemberTab({member,onMemberChange,condState,onCondChange,skillsState,onS
               placeholder="Enter member name…"
               className="member-name-input"
             />
+            <div className="level-row" style={{marginTop:6}}>
+              <span style={{fontSize:11,color:"#94A3B8",flexShrink:0}}>Product:</span>
+              <select value={member.product||"bnpl"} onChange={e=>onMemberChange({...member,product:e.target.value})} className="level-select">
+                {Object.entries(PRODUCTS).map(([k,p])=><option key={k} value={k}>{p.label}</option>)}
+              </select>
+            </div>
             <div className="level-row">
               <span style={{fontSize:11,color:"#94A3B8",flexShrink:0}}>Current:</span>
               <select value={member.level} onChange={e=>onMemberChange({...member,level:e.target.value})} className="level-select">
@@ -810,16 +816,6 @@ function MemberTab({member,onMemberChange,condState,onCondChange,skillsState,onS
               </div>
             )}
             {nl&&<p style={{fontSize:10,color:"#94A3B8",marginTop:4,marginBottom:0,lineHeight:1.4}}><em>{LEVELS[nl]?.eyeLevel}</em></p>}
-            <div style={{display:"flex",alignItems:"center",gap:6,marginTop:8,flexWrap:"wrap"}}>
-              <span style={{fontSize:11,color:"#94A3B8",flexShrink:0}}>Product:</span>
-              {Object.entries(PRODUCTS).map(([k,p])=>(
-                <button
-                  key={k}
-                  onClick={()=>onMemberChange({...member,product:k})}
-                  style={{padding:"3px 10px",borderRadius:20,fontSize:11,fontWeight:700,cursor:"pointer",border:`1.5px solid ${p.color}`,background:member.product===k?p.color:"transparent",color:member.product===k?"white":p.color,transition:"all 0.15s"}}
-                >{p.label}</button>
-              ))}
-            </div>
           </div>
           <div className="gate-status">
             <div style={{fontSize:10,color:"#64748B",textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>Mandatory Gates</div>
@@ -1033,7 +1029,7 @@ function App(){
         <div className="app-header">
           <div>
             <h1 className="app-title">🧑‍💼 Promotion Evaluation Tool</h1>
-            <p className="app-subtitle">ZPO Product Management Track · Manager's Review Workspace</p>
+            <p className="app-subtitle">Product Management Track · Manager's Review Workspace</p>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:flash?"#16A34A":"#9CA3AF",background:flash?"#F0FDF4":"#F8FAFC",border:`1px solid ${flash?"#BBF7D0":"#E5E7EB"}`,padding:"4px 10px",borderRadius:20,transition:"all 0.3s",flexShrink:0}}>
             <span>{flash?"●":"○"}</span>{flash?"Saved":"Auto-save on"}

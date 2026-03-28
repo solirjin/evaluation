@@ -1,7 +1,7 @@
 {
-  "name": "ZPO Promotion Evaluation Tool",
-  "short_name": "ZPO Promo",
-  "description": "ZaloPay Product Management Track — Manager's Review Workspace",
+  "name": "Promotion Evaluation Tool",
+  "short_name": "Promo Tool",
+  "description": "Product Management Track — Manager's Review Workspace",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#F1F5F9",
