@@ -54,6 +54,27 @@
 
 <div id="root"></div>
 
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<script>
+// ─── FIREBASE CONFIG (fill in your own project values) ───────────────────────
+const FIREBASE_CONFIG = {
+  apiKey:            "PASTE_YOUR_API_KEY",
+  authDomain:        "PASTE_YOUR_PROJECT.firebaseapp.com",
+  projectId:         "PASTE_YOUR_PROJECT_ID",
+  storageBucket:     "PASTE_YOUR_PROJECT.appspot.com",
+  messagingSenderId: "PASTE_YOUR_SENDER_ID",
+  appId:             "PASTE_YOUR_APP_ID",
+};
+try {
+  firebase.initializeApp(FIREBASE_CONFIG);
+} catch(e) {}
+const fbAuth = typeof firebase !== "undefined" ? firebase.auth()      : null;
+const fbDb   = typeof firebase !== "undefined" ? firebase.firestore() : null;
+</script>
+
 <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
@@ -107,8 +128,10 @@ const PRODUCTS = {
   cashloan:  { label: "Cash Loan",  color: "#10B981" },
 };
 
-// ─── EYE-LEVEL SUMMARY (per product, per level) ───────────────────────────────
-const EYE_LEVEL_SUMMARY = {
+// ─── EYE-LEVEL SUMMARY ────────────────────────────────────────────────────────
+// Default seed — written to Firestore on first login, never used directly after.
+// The public constant below is empty; actual content lives in the user's Firestore.
+const DEFAULT_EYE_LEVEL_SUMMARY = {
   bnpl: {
     "2.2": {
       headline: "Own a significant product scope end to end — from strategy to results",
@@ -164,6 +187,8 @@ const EYE_LEVEL_SUMMARY = {
     },
   },
 };
+// Public constant — empty in source; populated at runtime from Firestore/localStorage
+const EYE_LEVEL_SUMMARY = {};
 
 const SKILL_MATURITY = {
   "Feature Specification":    {"1.2":"Beginner","1.3":"Intermediate","2.1":"Proficient","2.2":"Expert","2.2pm":"Proficient","2.3":"Expert","2.3pm":"-","3.1":"Expert","3.1pm":"-","3.2":"Master","3.2pm":"-","3.3":"-"},
@@ -276,7 +301,7 @@ const MATURITY_DESC = {
 };
 
 // ─── STORAGE ──────────────────────────────────────────────────────────────────
-const SK = "zpo_promo_v4_local";
+const SK = "promo_v5_local";
 const defaultState = () => ({
   members:[
     {id:1,name:"",level:"2.1",product:"bnpl"},
@@ -285,6 +310,7 @@ const defaultState = () => ({
   ],
   conditions:{},
   skills:{},
+  eyeLevelSummary: DEFAULT_EYE_LEVEL_SUMMARY,
 });
 function loadState(){
   try{
@@ -292,6 +318,7 @@ function loadState(){
     if(r){
       const s=JSON.parse(r);
       s.members=s.members.map(m=>({product:"bnpl",...m}));
+      if(!s.eyeLevelSummary) s.eyeLevelSummary=DEFAULT_EYE_LEVEL_SUMMARY;
       return s;
     }
   }catch{}
@@ -312,14 +339,14 @@ const MDot=({l})=>l&&l!=="-"
 const memberDisplayName=(m)=>m.name.trim()||`Member ${m.id}`;
 
 // ─── HTML EXPORT ──────────────────────────────────────────────────────────────
-function generateHTML(member, conditions, skills) {
+function generateHTML(member, conditions, skills, eyeLevelSummary) {
   const nl = NEXT_LEVEL[member.level];
   const mc = conditions||{};
   const ms = skills||{};
   const dName = memberDisplayName(member);
   const date = new Date().toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"});
 
-  const eyeData = EYE_LEVEL_SUMMARY[member.product]?.[nl];
+  const eyeData = (eyeLevelSummary||{})[member.product]?.[nl];
   const eyeLevelSection = eyeData ? `
   <div class="card">
     <h2>⓪ Eye-Level Summary — What does ${nl} look like?</h2>
@@ -763,9 +790,9 @@ function CompGroup({group,skills,currentLevel,skillsState,onSkillChange}){
 }
 
 // ─── EYE-LEVEL SUMMARY SECTION ───────────────────────────────────────────────
-function EyeLevelSummarySection({level, product}){
+function EyeLevelSummarySection({level, product, eyeLevelSummary}){
   const nl=NEXT_LEVEL[level];
-  const data=EYE_LEVEL_SUMMARY[product]?.[nl];
+  const data=(eyeLevelSummary||{})[product]?.[nl];
   if(!data) return(
     <div style={{padding:"16px",background:"#F9FAFB",border:"1.5px solid #E5E7EB",borderRadius:10,color:"#9CA3AF",fontSize:13,textAlign:"center"}}>
       No eye-level summary defined for this target level.
@@ -822,7 +849,7 @@ function EyeLevelSummarySection({level, product}){
 }
 
 // ─── MEMBER TAB ───────────────────────────────────────────────────────────────
-function MemberTab({member,onMemberChange,condState,onCondChange,skillsState,onSkillChange,onExportHTML}){
+function MemberTab({member,onMemberChange,condState,onCondChange,skillsState,onSkillChange,onExportHTML,eyeLevelSummary}){
   const [sec,setSec]=useState("eyelevel");
   const [condEdit,setCondEdit]=useState(null); // {id, label, borderColor}
   const [condDraft,setCondDraft]=useState("");
@@ -889,7 +916,7 @@ function MemberTab({member,onMemberChange,condState,onCondChange,skillsState,onS
       {sec==="eyelevel"&&(
         <div>
           <p style={{fontSize:12,color:"#6B7280",marginBottom:12}}>Tổng quan về kỳ vọng ở level tiếp theo — đây là "bức tranh lớn" trước khi đi vào từng điều kiện cụ thể.</p>
-          <EyeLevelSummarySection level={member.level} product={member.product}/>
+          <EyeLevelSummarySection level={member.level} product={member.product} eyeLevelSummary={eyeLevelSummary}/>
         </div>
       )}
 
@@ -1009,13 +1036,49 @@ function App(){
   const [flash,setFlash]=useState(false);
   const [htmlModal,setHtmlModal]=useState({open:false,code:"",name:""});
   const [copied,setCopied]=useState(false);
+  const [user,setUser]=useState(null);
+  const [cloudReady,setCloudReady]=useState(false);
+  const saveTimer=useRef(null);
 
+  // Firebase auth listener
+  useEffect(()=>{
+    if(!fbAuth) return;
+    return fbAuth.onAuthStateChanged(u=>{
+      setUser(u);
+      if(u){
+        fbDb.collection("evaluations").doc(u.uid).get().then(doc=>{
+          if(doc.exists){
+            const data=doc.data();
+            if(!data.eyeLevelSummary) data.eyeLevelSummary=DEFAULT_EYE_LEVEL_SUMMARY;
+            data.members=data.members.map(m=>({product:"bnpl",...m}));
+            setSt(data);
+          } else {
+            const seed=loadState();
+            fbDb.collection("evaluations").doc(u.uid).set(seed);
+            setSt(seed);
+          }
+          setCloudReady(true);
+        }).catch(()=>setCloudReady(false));
+      } else {
+        setCloudReady(false);
+      }
+    });
+  },[]);
+
+  // Save to localStorage always; save to Firestore (debounced) when signed in
   useEffect(()=>{
     try{localStorage.setItem(SK,JSON.stringify(st));}catch{}
     setFlash(true);
     const t=setTimeout(()=>setFlash(false),1200);
+    if(user&&fbDb){
+      clearTimeout(saveTimer.current);
+      saveTimer.current=setTimeout(()=>{ fbDb.collection("evaluations").doc(user.uid).set(st); },1500);
+    }
     return()=>clearTimeout(t);
-  },[st]);
+  },[st,user]);
+
+  const signIn=()=>fbAuth&&fbAuth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+  const signOut=()=>fbAuth&&fbAuth.signOut().then(()=>setSt(loadState()));
 
   const updMember=(id,m)=>setSt(s=>({...s,members:s.members.map(x=>x.id===id?m:x)}));
   const updCond=(mid,c)=>setSt(s=>({...s,conditions:{...s.conditions,[mid]:c}}));
@@ -1105,8 +1168,17 @@ function App(){
             <h1 className="app-title">🧑‍💼 Promotion Evaluation Tool</h1>
             <p className="app-subtitle">Product Management Track · Manager's Review Workspace</p>
           </div>
-          <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:flash?"#16A34A":"#9CA3AF",background:flash?"#F0FDF4":"#F8FAFC",border:`1px solid ${flash?"#BBF7D0":"#E5E7EB"}`,padding:"4px 10px",borderRadius:20,transition:"all 0.3s",flexShrink:0}}>
-            <span>{flash?"●":"○"}</span>{flash?"Saved":"Auto-save on"}
+          <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
+            <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:flash?"#16A34A":"#9CA3AF",background:flash?"#F0FDF4":"#F8FAFC",border:`1px solid ${flash?"#BBF7D0":"#E5E7EB"}`,padding:"4px 10px",borderRadius:20,transition:"all 0.3s"}}>
+              <span>{flash?"●":"○"}</span>{flash?(user?"Saved to cloud":"Saved"):"Auto-save on"}
+            </div>
+            {fbAuth&&(
+              <button
+                onClick={user?signOut:signIn}
+                title={user?.email||"Sign in to sync across devices"}
+                style={{padding:"4px 10px",borderRadius:20,fontSize:11,fontWeight:700,border:`1px solid ${user?"#BBF7D0":"#E5E7EB"}`,background:user?"#F0FDF4":"#F8FAFC",color:user?"#16A34A":"#64748B",cursor:"pointer",whiteSpace:"nowrap"}}
+              >{user?`☁️ ${user.displayName?.split(" ")[0]||"Synced"}`:"☁️ Sync"}</button>
+            )}
           </div>
         </div>
 
@@ -1129,7 +1201,8 @@ function App(){
               onCondChange={c=>updCond(active.id,c)}
               skillsState={st.skills[active.id]}
               onSkillChange={(sk,skSt)=>updSkill(active.id,sk,skSt)}
-              onExportHTML={()=>{const code=generateHTML(active,st.conditions[active.id]||{},st.skills[active.id]||{});setHtmlModal({open:true,code,name:memberDisplayName(active)});}}
+              onExportHTML={()=>{const code=generateHTML(active,st.conditions[active.id]||{},st.skills[active.id]||{},st.eyeLevelSummary);setHtmlModal({open:true,code,name:memberDisplayName(active)});}}
+              eyeLevelSummary={st.eyeLevelSummary}
             />
           )}
         </div>
