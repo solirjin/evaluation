@@ -612,9 +612,47 @@ function RichEditor({value, onChange, placeholder, borderColor="#D1D5DB", minHei
   );
 }
 
+// ─── NOTE DISPLAY + BOTTOM SHEET ─────────────────────────────────────────────
+function NoteDisplay({label, value, onEdit, borderColor="#E5E7EB"}){
+  const hasContent = value && value !== "" && value !== "<br>";
+  return(
+    <div>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
+        <span style={{fontSize:11,fontWeight:600,color:"#374151"}}>{label}</span>
+        <button onClick={onEdit} style={{padding:"3px 10px",borderRadius:6,fontSize:11,fontWeight:700,cursor:"pointer",background:"#F1F5F9",color:"#374151",border:"1px solid #E2E8F0",flexShrink:0}}>Edit</button>
+      </div>
+      <div style={{border:`1.5px solid ${borderColor}`,borderRadius:6,padding:"8px 10px",minHeight:44,background:"white",fontSize:12,color:hasContent?"#374151":"#9CA3AF",lineHeight:1.65}}>
+        {hasContent?<div dangerouslySetInnerHTML={{__html:value}}/>:<span>Chưa có ghi chú</span>}
+      </div>
+    </div>
+  );
+}
+
+function BottomSheet({title, value, onChange, placeholder, borderColor, onSave, onClose}){
+  return(
+    <div style={{position:"fixed",inset:0,zIndex:900,background:"rgba(0,0,0,0.45)"}} onClick={onClose}>
+      <div style={{position:"fixed",bottom:0,left:0,right:0,background:"white",borderRadius:"16px 16px 0 0",padding:"16px",paddingBottom:"calc(16px + env(safe-area-inset-bottom))",maxHeight:"80vh",display:"flex",flexDirection:"column",boxShadow:"0 -8px 40px rgba(0,0,0,0.18)"}} onClick={e=>e.stopPropagation()}>
+        <div style={{width:36,height:4,borderRadius:2,background:"#E2E8F0",margin:"0 auto 14px"}}/>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+          <span style={{fontSize:13,fontWeight:700,color:"#111827"}}>{title}</span>
+          <div style={{display:"flex",gap:8}}>
+            <button onClick={onClose} style={{padding:"5px 12px",borderRadius:7,fontSize:12,fontWeight:700,cursor:"pointer",background:"#F1F5F9",color:"#374151",border:"1px solid #E2E8F0"}}>Cancel</button>
+            <button onClick={onSave} style={{padding:"5px 16px",borderRadius:7,fontSize:12,fontWeight:700,cursor:"pointer",background:"#0F172A",color:"white",border:"none"}}>Save</button>
+          </div>
+        </div>
+        <div style={{overflowY:"auto",flex:1}}>
+          <RichEditor value={value} onChange={onChange} placeholder={placeholder} borderColor={borderColor} minHeight={140}/>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── SKILL ROW ────────────────────────────────────────────────────────────────
 function SkillRow({skill,currentLevel,skillState={},onSkillChange}){
   const [exp,setExp]=useState(false);
+  const [editField,setEditField]=useState(null);
+  const [editDraft,setEditDraft]=useState("");
   const nl=NEXT_LEVEL[currentLevel];
   const cm=SKILL_MATURITY[skill]?.[currentLevel]||"-";
   const nm=SKILL_MATURITY[skill]?.[nl]||"-";
@@ -623,6 +661,8 @@ function SkillRow({skill,currentLevel,skillState={},onSkillChange}){
   const isMand=MANDATORY_SKILLS.includes(skill);
   const {assessment="",evidence="",gap=""}=skillState;
   const upd=(f,v)=>onSkillChange(skill,{...skillState,[f]:v});
+  const openEdit=(field)=>{setEditDraft(skillState[field]||"");setEditField(field);};
+  const saveEdit=()=>{upd(editField,editDraft);setEditField(null);};
   const setA=(v)=>{
     const next=assessment===v?"":v;
     // clear the opposite field when switching
@@ -672,31 +712,36 @@ function SkillRow({skill,currentLevel,skillState={},onSkillChange}){
               ))}
             </div>
             {(assessment==="met"||assessment==="promise")&&(
-              <div>
-                <label style={{fontSize:11,fontWeight:600,color:"#374151",display:"block",marginBottom:4}}>📝 Evidence / Supporting observations</label>
-                <RichEditor
-                  value={evidence}
-                  onChange={v=>upd("evidence",v)}
-                  placeholder="Describe specific examples, projects, or behaviors that demonstrate this skill at the next level..."
-                  borderColor="#D1D5DB"
-                  minHeight={80}
-                />
-              </div>
+              <NoteDisplay
+                label="📝 Evidence / Supporting observations"
+                value={evidence}
+                onEdit={()=>openEdit("evidence")}
+                borderColor="#D1D5DB"
+              />
             )}
             {assessment==="not_met"&&(
-              <div>
-                <label style={{fontSize:11,fontWeight:600,color:"#374151",display:"block",marginBottom:4}}>🔧 Room for improvement / Development actions</label>
-                <RichEditor
-                  value={gap}
-                  onChange={v=>upd("gap",v)}
-                  placeholder="Describe what the member needs to demonstrate, specific situations to practice, or development actions to close this gap..."
-                  borderColor="#FECACA"
-                  minHeight={80}
-                />
-              </div>
+              <NoteDisplay
+                label="🔧 Room for improvement / Development actions"
+                value={gap}
+                onEdit={()=>openEdit("gap")}
+                borderColor="#FECACA"
+              />
             )}
           </div>
         </div>
+      )}
+      {editField&&(
+        <BottomSheet
+          title={editField==="evidence"?"📝 Evidence / Supporting observations":"🔧 Room for improvement / Development actions"}
+          value={editDraft}
+          onChange={setEditDraft}
+          placeholder={editField==="evidence"
+            ?"Describe specific examples, projects, or behaviors that demonstrate this skill at the next level..."
+            :"Describe what the member needs to demonstrate, specific situations to practice, or development actions to close this gap..."}
+          borderColor={editField==="gap"?"#FECACA":"#D1D5DB"}
+          onSave={saveEdit}
+          onClose={()=>setEditField(null)}
+        />
       )}
     </div>
   );
@@ -824,8 +869,8 @@ function MemberTab({member,onMemberChange,condState,onCondChange,skillsState,onS
           </div>
           <div className="gate-status">
             <div style={{fontSize:10,color:"#64748B",textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>Mandatory Gates</div>
-            <div style={{fontSize:11,fontWeight:600,color:qaA==="met"?"#4ADE80":qaA==="not_met"?"#FCA5A5":"#94A3B8"}}>{qaA==="met"?"✅":qaA==="not_met"?"❌":"⬜"} Quality Assurance</div>
-            <div style={{fontSize:11,fontWeight:600,color:smA==="met"?"#4ADE80":smA==="not_met"?"#FCA5A5":"#94A3B8",marginTop:2}}>{smA==="met"?"✅":smA==="not_met"?"❌":"⬜"} Stakeholder Mgmt</div>
+            <div style={{fontSize:11,fontWeight:600,color:"#94A3B8"}}>🔴 Quality Assurance</div>
+            <div style={{fontSize:11,fontWeight:600,color:"#94A3B8",marginTop:2}}>🔴 Stakeholder Mgmt</div>
             <button onClick={onExportHTML} className="export-btn">⬇ Export HTML</button>
           </div>
         </div>
