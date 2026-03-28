@@ -1043,6 +1043,8 @@ function App(){
   // Firebase auth listener
   useEffect(()=>{
     if(!fbAuth) return;
+    // Handle redirect sign-in result (mobile flow)
+    fbAuth.getRedirectResult().catch(()=>{});
     return fbAuth.onAuthStateChanged(u=>{
       setUser(u);
       if(u){
@@ -1077,7 +1079,14 @@ function App(){
     return()=>clearTimeout(t);
   },[st,user]);
 
-  const signIn=()=>fbAuth&&fbAuth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+  const signIn=()=>{
+    if(!fbAuth) return;
+    const provider=new firebase.auth.GoogleAuthProvider();
+    // Use redirect on mobile (popup is often blocked); popup on desktop
+    const isMobile=/android|iphone|ipad|ipod/i.test(navigator.userAgent);
+    if(isMobile){ fbAuth.signInWithRedirect(provider); }
+    else { fbAuth.signInWithPopup(provider).catch(()=>fbAuth.signInWithRedirect(provider)); }
+  };
   const signOut=()=>fbAuth&&fbAuth.signOut().then(()=>setSt(loadState()));
 
   const updMember=(id,m)=>setSt(s=>({...s,members:s.members.map(x=>x.id===id?m:x)}));
