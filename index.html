@@ -316,7 +316,7 @@ function generateHTML(member, conditions, skills) {
     :`<div style="background:#F8FAFC;border:2px solid #E5E7EB;border-radius:8px;padding:10px 16px;color:#6B7280;font-weight:700;font-size:13px">⬜ Assessment in progress</div>`;
 
   // helper: escape single quotes for inline onclick
-  const esc = (s) => (s||"").replace(/'/g,"\\'").replace(/\n/g,"\\n");
+  const esc = (s) => (s||"").replace(/\\/g,"\\\\").replace(/'/g,"\\'").replace(/\n/g,"\\n");
 
   // helper: build a maturity cell with badge + info button
   const matCell = (matLevel, skillName) => {
@@ -494,7 +494,6 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDesc();});
 
 // (export via modal — see App)
 
-// ─── SKILL ROW ────────────────────────────────────────────────────────────────
 // ─── RICH TEXT EDITOR ─────────────────────────────────────────────────────────
 const TOOLBAR_BTNS = [
   { cmd:"bold",        icon:"B",      style:{fontWeight:900} },
@@ -692,14 +691,14 @@ function EyeLevelSummarySection({level}){
           <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
             <span style={{fontSize:18,flexShrink:0}}>👷</span>
             <div>
-              <div style={{fontSize:11,fontWeight:700,color:"#B45309",marginBottom:2}}>Trước (level 2.1)</div>
+              <div style={{fontSize:11,fontWeight:700,color:"#B45309",marginBottom:2}}>Trước (level {level})</div>
               <div style={{fontSize:12,color:"#78350F",lineHeight:1.6}}>{data.analogy.before}</div>
             </div>
           </div>
           <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
             <span style={{fontSize:18,flexShrink:0}}>🏆</span>
             <div>
-              <div style={{fontSize:11,fontWeight:700,color:"#065F46",marginBottom:2}}>Sau (level 2.2)</div>
+              <div style={{fontSize:11,fontWeight:700,color:"#065F46",marginBottom:2}}>Sau (level {nl})</div>
               <div style={{fontSize:12,color:"#064E3B",lineHeight:1.6}}>{data.analogy.after}</div>
             </div>
           </div>
@@ -710,7 +709,7 @@ function EyeLevelSummarySection({level}){
         </div>
       </div>
       <div>
-        <div style={{fontSize:11,fontWeight:800,textTransform:"uppercase",letterSpacing:0.5,color:"#374151",marginBottom:8}}>📋 3 Outputs cần demonstrate được ở level 2.2</div>
+        <div style={{fontSize:11,fontWeight:800,textTransform:"uppercase",letterSpacing:0.5,color:"#374151",marginBottom:8}}>📋 {data.outputs.length} Outputs cần demonstrate được ở level {nl}</div>
         <div style={{display:"flex",flexDirection:"column",gap:8}}>
           {data.outputs.map((o,i)=>(
             <div key={i} style={{background:"white",border:"1.5px solid #E5E7EB",borderRadius:10,padding:"12px 14px",display:"flex",gap:12,alignItems:"flex-start"}}>
@@ -1082,7 +1081,7 @@ let deferredPrompt = null;
 window.addEventListener("beforeinstallprompt", e => {
   e.preventDefault();
   deferredPrompt = e;
-  if (!window.matchMedia("(display-mode: standalone)").matches) {
+  if (!window.matchMedia("(display-mode: standalone)").matches && !localStorage.getItem("pwa-dismissed")) {
     document.getElementById("install-banner").classList.add("show");
   }
 });
