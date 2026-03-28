@@ -824,6 +824,8 @@ function EyeLevelSummarySection({level, product}){
 // ─── MEMBER TAB ───────────────────────────────────────────────────────────────
 function MemberTab({member,onMemberChange,condState,onCondChange,skillsState,onSkillChange,onExportHTML}){
   const [sec,setSec]=useState("eyelevel");
+  const [condEdit,setCondEdit]=useState(null); // {id, label, borderColor}
+  const [condDraft,setCondDraft]=useState("");
   const nl=NEXT_LEVEL[member.level];
 
   const toggleC=(id,val)=>onCondChange({...condState,[id]:condState?.[id]===val?null:val});
@@ -930,18 +932,15 @@ function MemberTab({member,onMemberChange,condState,onCondChange,skillsState,onS
 
                       )}
                       {v!=null&&(
-                        <>
-                          <label style={{fontSize:11,fontWeight:600,color:"#374151",display:"block",marginBottom:4}}>
-                            {v===true?"📝 Evidence / Supporting observations":"🔧 What is missing / needs improvement"}
-                          </label>
-                          <RichEditor
-                            value={note}
-                            onChange={val=>updNote(c.id,val)}
-                            placeholder={notePlaceholder}
-                            borderColor={v===true?"#BBF7D0":"#FECACA"}
-                            minHeight={70}
-                          />
-                        </>
+                        <NoteDisplay
+                          label={v===true?"📝 Evidence / Supporting observations":"🔧 What is missing / needs improvement"}
+                          value={note}
+                          borderColor={v===true?"#BBF7D0":"#FECACA"}
+                          onEdit={()=>{
+                            setCondDraft(note);
+                            setCondEdit({id:c.id,label:v===true?"📝 Evidence / Supporting observations":"🔧 What is missing / needs improvement",borderColor:v===true?"#BBF7D0":"#FECACA",placeholder:notePlaceholder});
+                          }}
+                        />
                       )}
                       {c.isCompetency&&v==null&&(
                         <button onClick={()=>setSec("competency")} style={{padding:"5px 12px",borderRadius:6,fontSize:12,fontWeight:700,cursor:"pointer",background:"#1E293B",color:"white",border:"none"}}>
@@ -960,6 +959,19 @@ function MemberTab({member,onMemberChange,condState,onCondChange,skillsState,onS
             )}
           </div>
         </div>
+      )}
+
+      {/* Condition note bottom sheet */}
+      {condEdit&&(
+        <BottomSheet
+          title={condEdit.label}
+          value={condDraft}
+          onChange={setCondDraft}
+          placeholder={condEdit.placeholder}
+          borderColor={condEdit.borderColor}
+          onSave={()=>{updNote(condEdit.id,condDraft);setCondEdit(null);}}
+          onClose={()=>setCondEdit(null)}
+        />
       )}
 
       {/* COMPETENCY SECTION */}
