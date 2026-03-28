@@ -1172,8 +1172,8 @@ function App(){
             <p className="app-subtitle">Product Management Track · Manager's Review Workspace</p>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
-            <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:flash?"#16A34A":"#9CA3AF",background:flash?"#F0FDF4":"#F8FAFC",border:`1px solid ${flash?"#BBF7D0":"#E5E7EB"}`,padding:"4px 10px",borderRadius:20,transition:"all 0.3s"}}>
-              <span>{flash?"●":"○"}</span>{flash?(user?"Saved to cloud":"Saved"):"Auto-save on"}
+            <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:user?(flash?"#15803D":"#16A34A"):(flash?"#16A34A":"#9CA3AF"),background:user?(flash?"#DCFCE7":"#F0FDF4"):(flash?"#F0FDF4":"#F8FAFC"),border:`1px solid ${user?(flash?"#86EFAC":"#BBF7D0"):(flash?"#BBF7D0":"#E5E7EB")}`,padding:"4px 10px",borderRadius:20,transition:"all 0.3s"}}>
+              <span>{user?"●":(flash?"●":"○")}</span>{flash?(user?"Saved to cloud":"Saved"):(user?"Cloud sync on":"Auto-save on")}
             </div>
             {fbAuth&&(
               <button
