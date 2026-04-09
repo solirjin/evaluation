@@ -1,4 +1,4 @@
-const CACHE = "zpo-promo-v3";
+const CACHE = "zpo-promo-v4";
 const ASSETS = [
   "./index.html",
   "./manifest.json",
