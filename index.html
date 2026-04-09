@@ -369,6 +369,7 @@ function loadState(){
       const s=JSON.parse(r);
       s.members=s.members.map(m=>({product:"bnpl",...m}));
       if(!s.eyeLevelSummary) s.eyeLevelSummary=DEFAULT_EYE_LEVEL_SUMMARY;
+      else Object.keys(DEFAULT_EYE_LEVEL_SUMMARY).forEach(p=>{if(!s.eyeLevelSummary[p])s.eyeLevelSummary[p]={};Object.keys(DEFAULT_EYE_LEVEL_SUMMARY[p]).forEach(lv=>{if(!s.eyeLevelSummary[p][lv])s.eyeLevelSummary[p][lv]=DEFAULT_EYE_LEVEL_SUMMARY[p][lv];});});
       return s;
     }
   }catch{}
@@ -1100,6 +1101,7 @@ function App(){
           if(doc.exists){
             const data=doc.data();
             if(!data.eyeLevelSummary) data.eyeLevelSummary=DEFAULT_EYE_LEVEL_SUMMARY;
+            else Object.keys(DEFAULT_EYE_LEVEL_SUMMARY).forEach(p=>{if(!data.eyeLevelSummary[p])data.eyeLevelSummary[p]={};Object.keys(DEFAULT_EYE_LEVEL_SUMMARY[p]).forEach(lv=>{if(!data.eyeLevelSummary[p][lv])data.eyeLevelSummary[p][lv]=DEFAULT_EYE_LEVEL_SUMMARY[p][lv];});});
             data.members=data.members.map(m=>({product:"bnpl",...m}));
             setSt(data);
           } else {
