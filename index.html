@@ -133,6 +133,31 @@ const PRODUCTS = {
 // The public constant below is empty; actual content lives in the user's Firestore.
 const DEFAULT_EYE_LEVEL_SUMMARY = {
   bnpl: {
+    "2.1": {
+      headline: "Own large features within BNPL — từ scope clarity đến delivery",
+      analogy: {
+        before: "Trước (1.3): Bạn thực thi theo spec được giao — làm đúng yêu cầu từ PO/LM cấp cao, follow deadline được set sẵn, báo cáo tiến độ lên trên. Scope, priority và các quyết định quan trọng đều do LM định hướng.",
+        after:  "Sau (2.1): Bạn own một feature lớn hoặc một product line trong BNPL — tự xác định cách execute, nắm rõ toàn bộ cấu trúc feature, biết ngay impact khi có thay đổi hay thêm mới, và luôn có visibility về tiến độ các workstream. Khi LM hỏi, bạn có ngay câu trả lời — không cần đợi tổng hợp.",
+        mapping: "Scope của bạn = một feature lớn hoặc individual product line trong BNPL (ví dụ: Onboarding flow, Repayment flow, hoặc một partner line). Resource = bạn và squad của mình. LM set direction chung, còn execution detail và visibility là responsibility hoàn toàn của bạn.",
+      },
+      outputs: [
+        {
+          icon: "🗺️",
+          title: "Feature Overview & Structure",
+          desc: "Nắm được toàn bộ cấu trúc của feature/flow bạn đang own trong BNPL: các sub-flow, component nào kết nối với nhau, flow nào phụ thuộc vào flow nào. Không cần ai giải thích — bạn là người nắm rõ nhất feature của mình và có thể giải thích cho người khác bất cứ lúc nào.",
+        },
+        {
+          icon: "⚠️",
+          title: "Impact & Risk Awareness",
+          desc: "Khi có thay đổi hoặc requirement mới được thêm vào feature của bạn, bạn biết ngay: phần nào bị ảnh hưởng, risk kỹ thuật hay nghiệp vụ nào cần xem xét, và cần coordinate với ai. Không để LM phải chỉ ra vấn đề — bạn chủ động flag và đề xuất trước.",
+        },
+        {
+          icon: "📊",
+          title: "Workstream Progress",
+          desc: "Nắm được từng workstream trong feature bạn own đang ở đâu: task nào đang chạy, task nào bị block, ai đang làm gì, và ETA có realistic không. Bạn luôn có cái nhìn up-to-date — không đợi daily standup hay sếp hỏi mới biết tiến độ.",
+        },
+      ],
+    },
     "2.2": {
       headline: "Own a significant product scope end to end — from strategy to results",
       analogy: {
@@ -160,6 +185,31 @@ const DEFAULT_EYE_LEVEL_SUMMARY = {
     },
   },
   cashloan: {
+    "2.1": {
+      headline: "Own large features within CashLoan — từ scope clarity đến delivery",
+      analogy: {
+        before: "Trước (1.3): Bạn thực thi theo spec được giao — xử lý từng task theo yêu cầu từ PO/LM cấp cao, follow deadline giải ngân được set sẵn, báo cáo số liệu lên trên. Scope và các quyết định sản phẩm lớn đều do LM định hướng.",
+        after:  "Sau (2.1): Bạn own một feature lớn hoặc một lending flow trong CashLoan — tự xác định cách execute, nắm rõ toàn bộ cấu trúc feature, biết ngay impact khi có thay đổi hay thêm mới, và luôn có visibility về tiến độ các workstream. Khi LM hỏi, bạn có ngay câu trả lời — không cần đợi tổng hợp.",
+        mapping: "Scope của bạn = một feature lớn hoặc individual lending flow trong CashLoan (ví dụ: Application flow, Disbursement flow, hoặc Repayment flow). Resource = bạn và squad của mình. LM set direction chung, còn execution detail và visibility là responsibility hoàn toàn của bạn.",
+      },
+      outputs: [
+        {
+          icon: "🗺️",
+          title: "Feature Overview & Structure",
+          desc: "Nắm được toàn bộ cấu trúc của feature/lending flow bạn đang own trong CashLoan: các sub-flow, component nào kết nối với nhau, flow nào phụ thuộc vào flow nào (ví dụ: Credit Scoring ảnh hưởng Approval như thế nào). Không cần ai giải thích — bạn là người nắm rõ nhất feature của mình và có thể giải thích cho người khác bất cứ lúc nào.",
+        },
+        {
+          icon: "⚠️",
+          title: "Impact & Risk Awareness",
+          desc: "Khi có thay đổi hoặc requirement mới được thêm vào feature của bạn, bạn biết ngay: phần nào bị ảnh hưởng (risk policy, tech, ops), risk nghiệp vụ hay kỹ thuật nào cần xem xét, và cần coordinate với ai (Risk, Compliance, Tech). Không để LM phải chỉ ra vấn đề — bạn chủ động flag và đề xuất trước.",
+        },
+        {
+          icon: "📊",
+          title: "Workstream Progress",
+          desc: "Nắm được từng workstream trong feature bạn own đang ở đâu: task nào đang chạy, task nào bị block (risk policy, tech, ops), ai đang làm gì, và ETA có realistic không. Bạn luôn có cái nhìn up-to-date — không đợi daily standup hay sếp hỏi mới biết tiến độ.",
+        },
+      ],
+    },
     "2.2": {
       headline: "Own a significant product scope end to end — from strategy to results",
       analogy: {
